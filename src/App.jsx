@@ -1,619 +1,801 @@
 import { useState, useRef, useEffect } from "react";
+import "./App.css";
 
-const C = {
-  bg: "#f9fafb",
-  surface: "#ffffff",
-  border: "#e5e9f0",
-  borderLight: "#f0f3f8",
-  accent: "#0071e3",
-  accentLight: "#e8f1fd",
-  text: "#1d1d1f",
-  textSecondary: "#6e6e73",
-  textLight: "#a1a1a6",
-};
+const MAILTO_LINK =
+  "mailto:bolu.compliance@gmail.com?subject=Cadence%20Compliance%20Inquiry&body=Hi%20Bolu%2C%0A%0AI%20just%20used%20the%20Cadence%20Compliance%20agent%20and%20I%27d%20like%20to%20discuss%20a%20full%20assessment%20for%20my%20organisation.%0A%0A%5BBrief%20description%20of%20your%20business%20and%20what%20you%20need%20help%20with%5D%0A%0ALooking%20forward%20to%20hearing%20from%20you.";
 
-const FORMSPREE = "https://formspree.io/f/xykvgopv";
+const SYSTEM_PROMPT = `You are a specialist compliance advisor operating under Cadence Compliance, run by Bolu Ogunleye — a qualified lawyer and Chartered Arbitrator. You provide expert, structured compliance guidance.
 
-const SYSTEM_PROMPT = `You are a senior compliance and legal advisor at Cadence Compliance. You speak like a thoughtful, experienced human consultant — never like an AI assistant generating documentation.
+RESPONSE RULES — follow these exactly:
+1. Never use hyphens (-) as bullet points or list markers. Use numbers (1. 2. 3.) for all lists.
+2. Never use markdown symbols: no **, no ##, no *, no ---, no >.
+3. Where a risk level applies to the overall situation, start your response with a single line: RISK LEVEL: [High/Medium/Low] followed by a blank line. Use High for serious regulatory exposure, Medium for moderate gaps, Low for minor or procedural issues. Only include this where genuinely relevant.
+4. Use numbered lists where there are multiple points. Do not mush everything into a paragraph when there are distinct items.
+5. Write in a clear, professional, consultant tone — not robotic, not overly casual.
+6. Keep responses focused and scannable. Use short paragraphs between numbered lists where needed.
+7. Do not pepper the user with multiple questions. Ask at most one clarifying question per response, and only when genuinely needed.
+8. Do not recommend the user "consult a lawyer" — you are the specialist. Give direct, informed guidance.
+9. Never start a sentence with a hyphen. Never use " - " as punctuation mid-sentence.
+10. Sign off responses where appropriate by noting that a full written assessment is available through Cadence Compliance.`;
 
-Your expertise spans regulatory compliance, data protection law, commercial law, ADR, and operational governance across regulated industries globally.
+const SUGGESTED_PROMPTS = [
+  "Review my privacy policy for NDPR compliance",
+  "What compliance gaps do homecare agencies typically have?",
+  "Is my employee data handling legally sound?",
+  "What regulations apply to my fintech startup in Nigeria?",
+];
 
-When someone describes their operations or asks a legal question:
-- Respond conversationally, as if you are sitting across from them explaining things
-- Identify the real risks and explain why they matter in plain language
-- Reference relevant regulations or legal principles where appropriate, but weave them naturally into your response rather than listing them
-- Be specific and direct — give them something they can act on
-- Never use markdown headers, bullet point symbols, or formatting symbols like ** or ##
-- Write in flowing paragraphs, the way a smart advisor actually speaks
-- Keep responses focused and practical
-- End naturally by noting that for a full assessment or implementation support, they should reach out to Bolu at bolu.compliance@gmail.com
-
-You are not a chatbot. You are a compliance expert having a real conversation.`;
-
-function humanizeText(text) {
-  return text
-    .replace(/#{1,3}\s+/g, "")
-    .replace(/\*\*(.*?)\*\*/g, "$1")
-    .replace(/\*(.*?)\*/g, "$1")
-    .replace(/^[-•]\s+/gm, "")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+function stripHyphens(text) {
+  // Remove lines that start with "- " (hyphen bullet)
+  let cleaned = text.replace(/^(\s*)-\s+/gm, (match, indent) => {
+    return indent;
+  });
+  // Remove inline " - " used as punctuation → replace with em dash or comma
+  cleaned = cleaned.replace(/\s-\s/g, " — ");
+  // Remove leading hyphens at start of sentence
+  cleaned = cleaned.replace(/^-\s/gm, "");
+  return cleaned;
 }
 
-function EmailGate({ onSubmit }) {
+function formatResponse(text) {
+  // Strip hyphens first
+  let t = stripHyphens(text);
+
+  // Handle RISK LEVEL line — render as styled badge
+  t = t.replace(
+    /^RISK LEVEL:\s*(High|Medium|Low)/im,
+    (_, level) => `__RISK__${level}__RISK__`
+  );
+
+  return t;
+}
+
+function RiskBadge({ level }) {
+  const colors = {
+    High: { bg: "#fff0f0", border: "#ff4d4d", text: "#cc0000", emoji: "🔴" },
+    Medium: { bg: "#fffbf0", border: "#f5a623", text: "#b07800", emoji: "🟡" },
+    Low: { bg: "#f0fff4", border: "#34c759", text: "#1a7a35", emoji: "🟢" },
+  };
+  const c = colors[level] || colors.Medium;
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "6px",
+        background: c.bg,
+        border: `1px solid ${c.border}`,
+        borderRadius: "6px",
+        padding: "4px 10px",
+        marginBottom: "12px",
+        fontSize: "13px",
+        fontWeight: "600",
+        color: c.text,
+        letterSpacing: "0.02em",
+      }}
+    >
+      {c.emoji} Risk Level: {level}
+    </div>
+  );
+}
+
+function MessageContent({ text }) {
+  const riskMatch = text.match(/__RISK__(High|Medium|Low)__RISK__/i);
+  const level = riskMatch ? riskMatch[1] : null;
+  const cleanText = text.replace(/__RISK__(High|Medium|Low)__RISK__\n?/i, "").trim();
+
+  const lines = cleanText.split("\n");
+
+  return (
+    <div>
+      {level && <RiskBadge level={level} />}
+      {lines.map((line, i) => {
+        if (!line.trim()) return <div key={i} style={{ height: "8px" }} />;
+        // Numbered list item
+        const numMatch = line.match(/^(\d+)\.\s+(.*)/);
+        if (numMatch) {
+          return (
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                gap: "10px",
+                marginBottom: "6px",
+                alignItems: "flex-start",
+              }}
+            >
+              <span
+                style={{
+                  minWidth: "22px",
+                  height: "22px",
+                  background: "#0a84ff",
+                  color: "#fff",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "11px",
+                  fontWeight: "700",
+                  flexShrink: 0,
+                  marginTop: "1px",
+                }}
+              >
+                {numMatch[1]}
+              </span>
+              <span style={{ lineHeight: "1.6", flex: 1 }}>{numMatch[2]}</span>
+            </div>
+          );
+        }
+        return (
+          <p key={i} style={{ margin: "0 0 6px 0", lineHeight: "1.65" }}>
+            {line}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+function BlurredMessage() {
+  return (
+    <div style={{ position: "relative" }}>
+      <div
+        style={{
+          filter: "blur(5px)",
+          userSelect: "none",
+          pointerEvents: "none",
+          lineHeight: "1.65",
+          color: "#333",
+        }}
+      >
+        <p>
+          Based on the details provided, this assessment identifies several key
+          compliance considerations that require your attention. The regulatory
+          framework applicable to your organisation creates specific obligations
+          around data handling, internal controls, and reporting.
+        </p>
+        <p>
+          1. Your current data processing practices present exposure under
+          applicable data protection law.
+        </p>
+        <p>
+          2. Internal policy documentation does not meet regulatory standards in
+          its current form.
+        </p>
+      </div>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "12px",
+          background: "rgba(255,255,255,0.6)",
+          backdropFilter: "blur(2px)",
+          borderRadius: "12px",
+        }}
+      >
+        <p
+          style={{
+            fontWeight: "600",
+            fontSize: "14px",
+            color: "#111",
+            textAlign: "center",
+            margin: 0,
+          }}
+        >
+          You've reached the free preview limit.
+        </p>
+        <a
+          href={MAILTO_LINK}
+          style={{
+            background: "#0a84ff",
+            color: "#fff",
+            padding: "9px 18px",
+            borderRadius: "8px",
+            fontSize: "13px",
+            fontWeight: "600",
+            textDecoration: "none",
+            display: "inline-block",
+          }}
+        >
+          Contact Bolu to continue →
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function Msg({ role, text, isLocked }) {
+  const isUser = role === "user";
+
+  if (isLocked) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-start",
+          marginBottom: "18px",
+        }}
+      >
+        <div style={{ display: "flex", gap: "10px", maxWidth: "80%", alignItems: "flex-start" }}>
+          <Avatar />
+          <div
+            style={{
+              background: "#fff",
+              border: "1px solid #e8e8e8",
+              borderRadius: "14px",
+              padding: "14px 16px",
+              fontSize: "14px",
+              color: "#1a1a1a",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+              flex: 1,
+            }}
+          >
+            <BlurredMessage />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const formatted = formatResponse(text);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: isUser ? "flex-end" : "flex-start",
+        marginBottom: "18px",
+      }}
+    >
+      {!isUser && (
+        <div style={{ display: "flex", gap: "10px", maxWidth: "80%", alignItems: "flex-start" }}>
+          <Avatar />
+          <div
+            style={{
+              background: "#fff",
+              border: "1px solid #e8e8e8",
+              borderRadius: "14px",
+              padding: "14px 16px",
+              fontSize: "14px",
+              color: "#1a1a1a",
+              lineHeight: "1.65",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+            }}
+          >
+            <MessageContent text={formatted} />
+          </div>
+        </div>
+      )}
+      {isUser && (
+        <div
+          style={{
+            background: "#0a84ff",
+            color: "#fff",
+            borderRadius: "14px",
+            padding: "12px 16px",
+            fontSize: "14px",
+            lineHeight: "1.6",
+            maxWidth: "75%",
+          }}
+        >
+          {text}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Avatar() {
+  return (
+    <div
+      style={{
+        width: "32px",
+        height: "32px",
+        borderRadius: "50%",
+        background: "#0a84ff",
+        flexShrink: 0,
+        marginTop: "2px",
+      }}
+    />
+  );
+}
+
+function EmailGate({ onEnter }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [focused, setFocused] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [org, setOrg] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const submit = () => {
-    if (!name.trim() || !email.trim()) { setError("Please fill in both fields."); return; }
-    if (!email.includes("@") || !email.includes(".")) { setError("Please enter a valid email address."); return; }
-    setError("");
-    setLoading(true);
-    fetch(FORMSPREE, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), email: email.trim(), source: "Cadence Compliance Agent" }),
-    }).catch(() => {});
-    setTimeout(() => {
-      setLoading(false);
-      onSubmit({ name: name.trim(), email: email.trim() });
-    }, 400);
+  const handleSubmit = async () => {
+    if (!name.trim() || !email.trim()) {
+      setError("Please enter your name and email.");
+      return;
+    }
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await fetch("https://formspree.io/f/xpwrjkwa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, organisation: org }),
+      });
+    } catch (_) {}
+    setSubmitting(false);
+    onEnter({ name, email, org });
   };
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 100,
-      background: "rgba(29,29,31,0.4)",
-      backdropFilter: "blur(16px)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: 24,
-    }}>
-      <div style={{
-        background: C.surface, borderRadius: 20,
-        padding: "44px 40px", maxWidth: 420, width: "100%",
-        boxShadow: "0 32px 80px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04)",
-        animation: "slideUp 0.35s cubic-bezier(0.16,1,0.3,1)",
-      }}>
-        <div style={{
-          width: 44, height: 44, borderRadius: 12,
-          background: C.accent, marginBottom: 24,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M10 2L13 7H17L14 11L15.5 16L10 13L4.5 16L6 11L3 7H7L10 2Z" fill="white" fillOpacity="0.9"/>
-          </svg>
-        </div>
-
-        <h2 style={{
-          fontSize: 22, fontWeight: 600, color: C.text,
-          marginBottom: 8, letterSpacing: "-0.3px",
-          fontFamily: "-apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif",
-        }}>Try the free advisor</h2>
-
-        <p style={{
-          fontSize: 14, color: C.textSecondary, marginBottom: 28, lineHeight: 1.6,
-          fontFamily: "-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif",
-        }}>
-          Enter your details to access the Cadence Compliance agent. No payment or account required.
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#f5f7fa",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "24px",
+        fontFamily:
+          "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      }}
+    >
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: "20px",
+          padding: "40px 36px",
+          maxWidth: "420px",
+          width: "100%",
+          boxShadow: "0 4px 32px rgba(0,0,0,0.08)",
+        }}
+      >
+        <div
+          style={{
+            width: "48px",
+            height: "48px",
+            background: "#0a84ff",
+            borderRadius: "14px",
+            marginBottom: "20px",
+          }}
+        />
+        <h1
+          style={{
+            fontSize: "22px",
+            fontWeight: "700",
+            color: "#111",
+            margin: "0 0 8px 0",
+          }}
+        >
+          Cadence Compliance
+        </h1>
+        <p
+          style={{
+            fontSize: "14px",
+            color: "#666",
+            margin: "0 0 28px 0",
+            lineHeight: "1.6",
+          }}
+        >
+          AI-powered compliance guidance from a qualified lawyer and Chartered
+          Arbitrator. Enter your details to begin.
         </p>
 
         {[
-          { key: "name", label: "Full Name", type: "text", val: name, set: setName, ph: "Your full name" },
-          { key: "email", label: "Email Address", type: "email", val: email, set: setEmail, ph: "you@company.com" },
-        ].map(f => (
-          <div key={f.key} style={{ marginBottom: 14 }}>
-            <label style={{
-              display: "block", fontSize: 12, fontWeight: 500,
-              color: focused === f.key ? C.accent : C.textSecondary,
-              marginBottom: 6,
-              fontFamily: "-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif",
-              transition: "color 0.2s",
-            }}>{f.label}</label>
-            <input
-              type={f.type}
-              value={f.val}
-              onChange={e => f.set(e.target.value)}
-              onFocus={() => setFocused(f.key)}
-              onBlur={() => setFocused(null)}
-              onKeyDown={e => e.key === "Enter" && submit()}
-              placeholder={f.ph}
+          { label: "Full Name", val: name, set: setName, type: "text", ph: "Your name" },
+          { label: "Email Address", val: email, set: setEmail, type: "email", ph: "you@company.com" },
+          { label: "Organisation (optional)", val: org, set: setOrg, type: "text", ph: "Company or firm name" },
+        ].map(({ label, val, set, type, ph }) => (
+          <div key={label} style={{ marginBottom: "16px" }}>
+            <label
               style={{
-                width: "100%", padding: "12px 14px",
-                border: `1.5px solid ${focused === f.key ? C.accent : C.border}`,
-                borderRadius: 10, fontSize: 15, color: C.text,
-                background: "#fff", outline: "none", boxSizing: "border-box",
-                fontFamily: "-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif",
-                transition: "border-color 0.2s",
-                WebkitAppearance: "none",
+                display: "block",
+                fontSize: "13px",
+                fontWeight: "600",
+                color: "#333",
+                marginBottom: "6px",
+              }}
+            >
+              {label}
+            </label>
+            <input
+              type={type}
+              value={val}
+              onChange={(e) => set(e.target.value)}
+              placeholder={ph}
+              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: "10px",
+                border: "1px solid #e0e0e0",
+                fontSize: "14px",
+                outline: "none",
+                boxSizing: "border-box",
+                fontFamily: "inherit",
+                color: "#111",
               }}
             />
           </div>
         ))}
 
         {error && (
-          <p style={{
-            fontSize: 13, color: "#ff3b30", marginBottom: 14,
-            fontFamily: "-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif",
-          }}>{error}</p>
+          <p style={{ color: "#cc0000", fontSize: "13px", marginBottom: "12px" }}>
+            {error}
+          </p>
         )}
 
         <button
-          onClick={submit}
-          disabled={loading}
+          onClick={handleSubmit}
+          disabled={submitting}
           style={{
-            width: "100%", padding: "13px",
-            background: loading ? "#a0c4f0" : C.accent,
-            border: "none", borderRadius: 10,
-            color: "#fff", fontSize: 15, fontWeight: 500,
-            cursor: loading ? "default" : "pointer",
-            fontFamily: "-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif",
-            letterSpacing: "-0.1px", transition: "background 0.2s",
+            width: "100%",
+            padding: "12px",
+            background: submitting ? "#7db8f5" : "#0a84ff",
+            color: "#fff",
+            border: "none",
+            borderRadius: "12px",
+            fontSize: "15px",
+            fontWeight: "600",
+            cursor: submitting ? "not-allowed" : "pointer",
+            fontFamily: "inherit",
           }}
         >
-          {loading ? "One moment…" : "Access the agent"}
+          {submitting ? "Starting..." : "Start Consultation"}
         </button>
 
-        <p style={{
-          fontSize: 12, color: C.textLight, marginTop: 16, textAlign: "center",
-          fontFamily: "-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif",
-          lineHeight: 1.5,
-        }}>
-          Your details are confidential and never shared.
+        <p
+          style={{
+            fontSize: "11px",
+            color: "#aaa",
+            textAlign: "center",
+            marginTop: "16px",
+            lineHeight: "1.5",
+          }}
+        >
+          By continuing you agree that responses are for informational purposes.
+          A full written assessment is available upon request.
         </p>
       </div>
     </div>
   );
 }
 
-function Msg({ msg, assistantIndex }) {
-  const isUser = msg.role === "user";
-  const [copied, setCopied] = useState(false);
-  const isLocked = !isUser && assistantIndex >= 3;
-
-  const copy = () => {
-    if (isLocked) return;
-    navigator.clipboard.writeText(msg.content).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
-  return (
-    <div style={{
-      marginBottom: 12,
-      display: "flex",
-      justifyContent: isUser ? "flex-end" : "flex-start",
-      animation: "fadeIn 0.25s ease",
-    }}>
-      {!isUser && (
-        <div style={{
-          width: 30, height: 30, borderRadius: "50%",
-          background: C.accent, flexShrink: 0, marginRight: 10, marginTop: 2,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
-            <path d="M10 2L13 7H17L14 11L15.5 16L10 13L4.5 16L6 11L3 7H7L10 2Z" fill="white" fillOpacity="0.9"/>
-          </svg>
-        </div>
-      )}
-
-      <div style={{ maxWidth: "76%", position: "relative" }}>
-        <div style={{
-          padding: isUser ? "11px 16px" : "14px 16px",
-          borderRadius: isUser ? "18px 18px 4px 18px" : "4px 18px 18px 18px",
-          background: isUser ? C.accent : C.surface,
-          color: isUser ? "#fff" : C.text,
-          fontSize: 14.5, lineHeight: 1.7,
-          border: isUser ? "none" : `1px solid ${C.border}`,
-          fontFamily: "-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif",
-          boxShadow: isUser ? "0 2px 8px rgba(0,113,227,0.2)" : "0 1px 4px rgba(0,0,0,0.04)",
-          filter: isLocked ? "blur(5px)" : "none",
-          userSelect: isLocked ? "none" : "text",
-          whiteSpace: "pre-wrap",
-          overflow: "hidden",
-        }}>
-          {msg.content}
-          {msg.attachment && (
-            <div style={{
-              marginTop: 10, padding: "8px 10px",
-              background: isUser ? "rgba(255,255,255,0.15)" : C.bg,
-              borderRadius: 8, fontSize: 12,
-              color: isUser ? "rgba(255,255,255,0.8)" : C.textSecondary,
-            }}>
-              📄 {msg.attachment.name} ({Math.round(msg.attachment.size / 1024)}KB)
-            </div>
-          )}
-        </div>
-
-        {isLocked && (
-          <div style={{
-            position: "absolute", inset: 0,
-            borderRadius: "4px 18px 18px 18px",
-            background: "rgba(249,250,251,0.88)",
-            backdropFilter: "blur(3px)",
-            display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center",
-            padding: "20px 24px", textAlign: "center",
-            border: `1px solid ${C.border}`,
-          }}>
-            <p style={{
-              fontSize: 13, fontWeight: 500, color: C.text, marginBottom: 4,
-              fontFamily: "-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif",
-            }}>Preview limit reached</p>
-            <p style={{
-              fontSize: 12, color: C.textSecondary, marginBottom: 12, lineHeight: 1.5,
-              fontFamily: "-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif",
-            }}>Contact Bolu to continue your assessment.</p>
-            <a href="mailto:bolu.compliance@gmail.com" style={{
-              fontSize: 12, fontWeight: 500, color: "#fff",
-              background: C.accent, padding: "7px 16px",
-              borderRadius: 8, textDecoration: "none",
-              fontFamily: "-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif",
-            }}>Get in touch</a>
-          </div>
-        )}
-
-        {!isUser && !isLocked && (
-          <button onClick={copy} style={{
-            marginTop: 5, background: "none", border: "none",
-            cursor: "pointer", fontSize: 11,
-            color: copied ? C.accent : C.textLight,
-            fontFamily: "-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif",
-            padding: "2px 4px",
-          }}>
-            {copied ? "Copied" : "Copy"}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function Dots() {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, animation: "fadeIn 0.2s ease" }}>
-      <div style={{
-        width: 30, height: 30, borderRadius: "50%",
-        background: C.accent, flexShrink: 0,
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
-        <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
-          <path d="M10 2L13 7H17L14 11L15.5 16L10 13L4.5 16L6 11L3 7H7L10 2Z" fill="white" fillOpacity="0.9"/>
-        </svg>
-      </div>
-      <div style={{
-        padding: "11px 16px", background: C.surface,
-        border: `1px solid ${C.border}`, borderRadius: "4px 18px 18px 18px",
-        display: "flex", gap: 5, alignItems: "center",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-      }}>
-        {[0, 1, 2].map(i => (
-          <div key={i} style={{
-            width: 6, height: 6, borderRadius: "50%",
-            background: C.textLight,
-            animation: `dot 1.2s ease ${i * 0.2}s infinite`,
-          }} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-const PROMPTS = [
-  "We collect customer data across multiple channels. What compliance gaps should I be aware of?",
-  "Walk me through what an AML compliance framework should look like for a fintech startup.",
-  "We're a homecare provider. What regulations apply to how we handle patient information?",
-  "What does a valid arbitration clause need to include to be enforceable?",
-];
-
-export default function CadenceAgent() {
+export default function App() {
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [attachment, setAttachment] = useState(null);
-  const [focused, setFocused] = useState(false);
-  const fileRef = useRef();
-  const bottomRef = useRef();
-  const textRef = useRef();
+  const bottomRef = useRef(null);
+
+  const assistantCount = messages.filter((m) => m.role === "assistant").length;
+  const isLocked = assistantCount >= 3;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  const handleFile = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.type !== "application/pdf") { alert("Please upload a PDF file."); return; }
-    const reader = new FileReader();
-    reader.onload = ev => {
-      setAttachment({ name: file.name, size: file.size, data: ev.target.result.split(",")[1] });
-    };
-    reader.readAsDataURL(file);
-    e.target.value = "";
-  };
-
-  const send = async () => {
-    const text = input.trim();
-    if ((!text && !attachment) || loading) return;
+  const send = async (text) => {
+    if (!text.trim() || loading || isLocked) return;
+    const userMsg = { role: "user", content: text };
+    const next = [...messages, userMsg];
+    setMessages(next.map((m) => ({ role: m.role, text: m.content || m.text })));
     setInput("");
-    const att = attachment;
-    setAttachment(null);
-
-    const userMsg = { role: "user", content: text || "Please review the attached document.", attachment: att };
-    const updated = [...messages, userMsg];
-    setMessages(updated);
     setLoading(true);
 
     try {
-      const apiMsgs = updated.map(m => {
-        if (m.attachment?.data) {
-          return {
-            role: m.role,
-            content: [
-              { type: "document", source: { type: "base64", media_type: "application/pdf", data: m.attachment.data } },
-              { type: "text", text: m.content },
-            ],
-          };
-        }
-        return { role: m.role, content: m.content };
-      });
-
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 1024,
+          messages: next.map((m) => ({
+            role: m.role,
+            content: m.content || m.text,
+          })),
           system: SYSTEM_PROMPT,
-          messages: apiMsgs,
         }),
       });
-
       const data = await res.json();
-      if (data.error) throw new Error(data.error.message);
-      const raw = data.content?.map(b => b.text || "").join("") || "";
-      const reply = humanizeText(raw);
-      setMessages(prev => [...prev, { role: "assistant", content: reply }]);
+      const reply =
+        data?.content?.[0]?.text || "Something went wrong. Please try again.";
+      setMessages((prev) => [...prev, { role: "assistant", text: reply }]);
     } catch {
-      setMessages(prev => [...prev, { role: "assistant", content: "Something went wrong. Please try again in a moment." }]);
-    } finally {
-      setLoading(false);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", text: "Something went wrong. Please try again." },
+      ]);
     }
+    setLoading(false);
   };
 
-  const onKey = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
-  };
-
-  const assistantCount = messages.filter(m => m.role === "assistant").length;
-  const isLocked = assistantCount >= 3;
-  const isEmpty = messages.length === 0;
+  if (!user) return <EmailGate onEnter={setUser} />;
 
   return (
-    <>
-      <style>{`
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: ${C.bg}; -webkit-font-smoothing: antialiased; }
-        @keyframes slideUp { from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)} }
-        @keyframes fadeIn { from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)} }
-        @keyframes dot { 0%,100%{transform:translateY(0);opacity:0.4}50%{transform:translateY(-4px);opacity:1} }
-        textarea { font-family: -apple-system,'Helvetica Neue',sans-serif!important; resize:none; }
-        input { font-family: -apple-system,'Helvetica Neue',sans-serif!important; }
-        ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:${C.border};border-radius:4px}
-        #replit-badge,[data-testid="replit-badge"],a[href*="replit.com/badge"],iframe[src*="replit"]{
-          display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;
-        }
-      `}</style>
-
-      {!user && <EmailGate onSubmit={setUser} />}
-
-      <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: C.bg }}>
-        {/* Header */}
-        <div style={{
-          background: "rgba(255,255,255,0.88)", backdropFilter: "blur(20px)",
-          borderBottom: `1px solid ${C.borderLight}`,
-          padding: "14px 24px",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          flexShrink: 0,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 8, background: C.accent,
-              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-            }}>
-              <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2L13 7H17L14 11L15.5 16L10 13L4.5 16L6 11L3 7H7L10 2Z" fill="white" fillOpacity="0.9"/>
-              </svg>
-            </div>
-            <div>
-              <div style={{
-                fontSize: 15, fontWeight: 600, color: C.text, letterSpacing: "-0.2px",
-                fontFamily: "-apple-system, 'Helvetica Neue', sans-serif",
-              }}>Cadence Compliance</div>
-              <div style={{
-                fontSize: 11, color: C.textLight,
-                fontFamily: "-apple-system, 'Helvetica Neue', sans-serif",
-              }}>Compliance Advisor</div>
-            </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {user && (
-              <span style={{
-                fontSize: 12, color: C.textSecondary,
-                fontFamily: "-apple-system, 'Helvetica Neue', sans-serif",
-              }}>{user.name}</span>
-            )}
-            {messages.length > 0 && (
-              <button onClick={() => setMessages([])} style={{
-                background: "none", border: "none", cursor: "pointer",
-                fontSize: 12, color: C.textLight,
-                fontFamily: "-apple-system, 'Helvetica Neue', sans-serif",
-              }}>Clear</button>
-            )}
-          </div>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#f5f7fa",
+        fontFamily:
+          "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          background: "#fff",
+          borderBottom: "1px solid #ebebeb",
+          padding: "0 20px",
+          height: "58px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div
+            style={{
+              width: "30px",
+              height: "30px",
+              background: "#0a84ff",
+              borderRadius: "8px",
+            }}
+          />
+          <span style={{ fontWeight: "700", fontSize: "16px", color: "#111" }}>
+            Cadence Compliance
+          </span>
         </div>
-
-        {/* Messages */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "24px 20px" }}>
-          <div style={{ maxWidth: 720, margin: "0 auto" }}>
-            {isEmpty && (
-              <div style={{ textAlign: "center", padding: "60px 20px 40px", animation: "fadeIn 0.4s ease" }}>
-                <div style={{
-                  width: 54, height: 54, borderRadius: 16, background: C.accentLight,
-                  margin: "0 auto 20px", display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
-                    <path d="M10 2L13 7H17L14 11L15.5 16L10 13L4.5 16L6 11L3 7H7L10 2Z" fill={C.accent}/>
-                  </svg>
-                </div>
-                <h2 style={{
-                  fontSize: 22, fontWeight: 600, color: C.text, marginBottom: 8, letterSpacing: "-0.3px",
-                  fontFamily: "-apple-system, 'Helvetica Neue', sans-serif",
-                }}>How can I help you today?</h2>
-                <p style={{
-                  fontSize: 14, color: C.textSecondary, lineHeight: 1.65, maxWidth: 380, margin: "0 auto 32px",
-                  fontFamily: "-apple-system, 'Helvetica Neue', sans-serif",
-                }}>
-                  Describe your operations, ask a compliance question, or upload a policy document for review.
-                </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 440, margin: "0 auto" }}>
-                  {PROMPTS.map((q, i) => (
-                    <button key={i} onClick={() => { setInput(q); textRef.current?.focus(); }} style={{
-                      padding: "12px 16px", background: C.surface,
-                      border: `1px solid ${C.border}`, borderRadius: 12,
-                      color: C.text, fontSize: 13.5, cursor: "pointer", textAlign: "left",
-                      fontFamily: "-apple-system, 'Helvetica Neue', sans-serif",
-                      lineHeight: 1.5, transition: "border-color 0.15s, box-shadow 0.15s",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,113,227,0.1)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.04)"; }}
-                    >{q}</button>
-                  ))}
-                </div>
-                <p style={{
-                  fontSize: 12, color: C.textLight, marginTop: 32,
-                  fontFamily: "-apple-system, 'Helvetica Neue', sans-serif",
-                }}>Powered by Cadence Compliance</p>
-              </div>
-            )}
-
-            {messages.map((m, i) => {
-              const aIdx = m.role === "assistant"
-                ? messages.slice(0, i + 1).filter(x => x.role === "assistant").length - 1
-                : -1;
-              return <Msg key={i} msg={m} assistantIndex={aIdx} />;
-            })}
-            {loading && <Dots />}
-            <div ref={bottomRef} />
-          </div>
-        </div>
-
-        {/* Input */}
-        <div style={{
-          background: "rgba(255,255,255,0.9)", backdropFilter: "blur(20px)",
-          borderTop: `1px solid ${C.borderLight}`,
-          padding: "14px 20px 20px", flexShrink: 0,
-        }}>
-          <div style={{ maxWidth: 720, margin: "0 auto" }}>
-            {attachment && (
-              <div style={{
-                display: "flex", alignItems: "center", gap: 8,
-                padding: "8px 12px", background: C.accentLight,
-                border: `1px solid ${C.accent}22`, borderRadius: 8, marginBottom: 10,
-              }}>
-                <span style={{
-                  fontSize: 12.5, color: C.accent, flex: 1,
-                  fontFamily: "-apple-system, 'Helvetica Neue', sans-serif",
-                }}>📄 {attachment.name} ({Math.round(attachment.size / 1024)}KB)</span>
-                <button onClick={() => setAttachment(null)} style={{
-                  background: "none", border: "none", cursor: "pointer",
-                  fontSize: 16, color: C.accent, lineHeight: 1,
-                }}>×</button>
-              </div>
-            )}
-
-            {isLocked && (
-              <div style={{
-                padding: "10px 14px", background: C.accentLight,
-                border: `1px solid ${C.accent}22`, borderRadius: 10, marginBottom: 10,
-                textAlign: "center",
-                fontFamily: "-apple-system, 'Helvetica Neue', sans-serif",
-                fontSize: 13, color: C.accent, fontWeight: 500,
-              }}>
-                Free preview complete.{" "}
-                <a href="mailto:bolu.compliance@gmail.com" style={{ color: C.accent, fontWeight: 600 }}>
-                  Email Bolu
-                </a>{" "}to continue.
-              </div>
-            )}
-
-            <div style={{
-              display: "flex", gap: 8, alignItems: "flex-end",
-              background: C.surface,
-              border: `1.5px solid ${focused ? C.accent : C.border}`,
-              borderRadius: 14, padding: "10px 10px 10px 14px",
-              boxShadow: focused ? "0 0 0 3px rgba(0,113,227,0.08)" : "0 1px 4px rgba(0,0,0,0.06)",
-              transition: "border-color 0.2s, box-shadow 0.2s",
-            }}>
-              <textarea
-                ref={textRef}
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={onKey}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                disabled={isLocked}
-                placeholder={isLocked ? "Preview limit reached." : "Ask about compliance, regulations, or upload a policy…"}
-                rows={2}
-                style={{
-                  flex: 1, fontSize: 14.5, color: isLocked ? C.textLight : C.text,
-                  background: "transparent", border: "none", outline: "none",
-                  lineHeight: 1.6, padding: 0, cursor: isLocked ? "not-allowed" : "text",
-                }}
-              />
-              <div style={{ display: "flex", gap: 6, alignItems: "flex-end", flexShrink: 0 }}>
-                {!isLocked && (
-                  <>
-                    <button onClick={() => fileRef.current?.click()} title="Attach PDF" style={{
-                      width: 34, height: 34, borderRadius: 8, border: "none",
-                      background: C.bg, cursor: "pointer", fontSize: 16,
-                      display: "flex", alignItems: "center", justifyContent: "center", color: C.textSecondary,
-                    }}>📎</button>
-                    <input ref={fileRef} type="file" accept=".pdf" style={{ display: "none" }} onChange={handleFile} />
-                  </>
-                )}
-                <button
-                  onClick={send}
-                  disabled={(!input.trim() && !attachment) || loading || isLocked}
-                  style={{
-                    width: 34, height: 34, borderRadius: 8, border: "none",
-                    background: ((!input.trim() && !attachment) || loading || isLocked) ? C.border : C.accent,
-                    cursor: ((!input.trim() && !attachment) || loading || isLocked) ? "not-allowed" : "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    transition: "background 0.15s", flexShrink: 0,
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 19V5m-7 7l7-7 7 7" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <p style={{
-              fontSize: 11, color: C.textLight, marginTop: 8, textAlign: "center",
-              fontFamily: "-apple-system, 'Helvetica Neue', sans-serif",
-            }}>
-              Free preview only. For a full assessment, contact{" "}
-              <a href="mailto:bolu.compliance@gmail.com" style={{ color: C.accent, textDecoration: "none" }}>bolu.compliance@gmail.com</a>
-            </p>
-          </div>
-        </div>
+        <a
+          href={MAILTO_LINK}
+          style={{
+            fontSize: "13px",
+            color: "#0a84ff",
+            textDecoration: "none",
+            fontWeight: "500",
+          }}
+        >
+          Contact Bolu
+        </a>
       </div>
-    </>
+
+      {/* Chat area */}
+      <div
+        style={{
+          flex: 1,
+          maxWidth: "720px",
+          width: "100%",
+          margin: "0 auto",
+          padding: "24px 20px 140px",
+          boxSizing: "border-box",
+        }}
+      >
+        {messages.length === 0 && (
+          <div style={{ paddingTop: "40px" }}>
+            <h2
+              style={{
+                fontSize: "26px",
+                fontWeight: "700",
+                color: "#111",
+                marginBottom: "6px",
+              }}
+            >
+              Hello, {user.name.split(" ")[0]}.
+            </h2>
+            <p style={{ color: "#666", fontSize: "15px", marginBottom: "32px" }}>
+              Ask about compliance requirements, policy gaps, or regulatory risk.
+            </p>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                gap: "12px",
+              }}
+            >
+              {SUGGESTED_PROMPTS.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => send(p)}
+                  style={{
+                    background: "#fff",
+                    border: "1px solid #e0e0e0",
+                    borderRadius: "12px",
+                    padding: "14px 16px",
+                    fontSize: "13px",
+                    color: "#333",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    lineHeight: "1.5",
+                    fontFamily: "inherit",
+                    transition: "box-shadow 0.15s",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.boxShadow =
+                      "0 2px 12px rgba(0,0,0,0.1)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.boxShadow = "none")
+                  }
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {messages.map((m, i) => {
+          const assistantIndex = messages
+            .slice(0, i + 1)
+            .filter((x) => x.role === "assistant").length;
+          const locked = m.role === "assistant" && assistantIndex > 3;
+          return <Msg key={i} role={m.role} text={m.text} isLocked={locked} />;
+        })}
+
+        {loading && (
+          <div style={{ display: "flex", gap: "10px", marginBottom: "18px", alignItems: "flex-start" }}>
+            <Avatar />
+            <div
+              style={{
+                background: "#fff",
+                border: "1px solid #e8e8e8",
+                borderRadius: "14px",
+                padding: "14px 16px",
+                boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+              }}
+            >
+              <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    style={{
+                      width: "7px",
+                      height: "7px",
+                      borderRadius: "50%",
+                      background: "#0a84ff",
+                      animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Input bar */}
+      <div
+        style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: "rgba(245,247,250,0.92)",
+          backdropFilter: "blur(12px)",
+          borderTop: "1px solid #e8e8e8",
+          padding: "12px 20px 20px",
+        }}
+      >
+        {isLocked ? (
+          <div
+            style={{
+              maxWidth: "720px",
+              margin: "0 auto",
+              background: "#fff",
+              borderRadius: "14px",
+              padding: "16px 18px",
+              border: "1px solid #e0e0e0",
+              textAlign: "center",
+            }}
+          >
+            <p style={{ color: "#333", fontSize: "14px", margin: "0 0 10px 0", fontWeight: "500" }}>
+              You've reached the free preview limit.
+            </p>
+            <a
+              href={MAILTO_LINK}
+              style={{
+                background: "#0a84ff",
+                color: "#fff",
+                padding: "9px 20px",
+                borderRadius: "9px",
+                fontSize: "13px",
+                fontWeight: "600",
+                textDecoration: "none",
+                display: "inline-block",
+              }}
+            >
+              Contact Bolu to continue →
+            </a>
+          </div>
+        ) : (
+          <div
+            style={{
+              maxWidth: "720px",
+              margin: "0 auto",
+              display: "flex",
+              gap: "10px",
+              alignItems: "flex-end",
+            }}
+          >
+            <textarea
+              rows={1}
+              value={input}
+              onChange={(e) => {
+                setInput(e.target.value);
+                e.target.style.height = "auto";
+                e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send(input);
+                }
+              }}
+              placeholder="Ask a compliance question..."
+              style={{
+                flex: 1,
+                padding: "12px 14px",
+                borderRadius: "12px",
+                border: "1px solid #ddd",
+                fontSize: "14px",
+                fontFamily: "inherit",
+                resize: "none",
+                outline: "none",
+                background: "#fff",
+                lineHeight: "1.5",
+                boxSizing: "border-box",
+                overflowY: "hidden",
+                color: "#111",
+              }}
+            />
+            <button
+              onClick={() => send(input)}
+              disabled={loading || !input.trim()}
+              style={{
+                width: "42px",
+                height: "42px",
+                borderRadius: "10px",
+                background: loading || !input.trim() ? "#c5dff8" : "#0a84ff",
+                border: "none",
+                cursor: loading || !input.trim() ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"
+                  stroke="#fff"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes bounce {
+          0%, 80%, 100% { transform: translateY(0); }
+          40% { transform: translateY(-6px); }
+        }
+        * { -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; }
+      `}</style>
+    </div>
   );
 }
