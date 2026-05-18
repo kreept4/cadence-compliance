@@ -26,27 +26,18 @@ const SUGGESTED_PROMPTS = [
 ];
 
 function stripHyphens(text) {
-  // Remove lines that start with "- " (hyphen bullet)
-  let cleaned = text.replace(/^(\s*)-\s+/gm, (match, indent) => {
-    return indent;
-  });
-  // Remove inline " - " used as punctuation → replace with em dash or comma
-  cleaned = cleaned.replace(/\s-\s/g, " — ");
-  // Remove leading hyphens at start of sentence
+  let cleaned = text.replace(/^(\s*)-\s+/gm, (_, indent) => indent);
+  cleaned = cleaned.replace(/\s+-\s+/g, " — ");
   cleaned = cleaned.replace(/^-\s/gm, "");
   return cleaned;
 }
 
 function formatResponse(text) {
-  // Strip hyphens first
   let t = stripHyphens(text);
-
-  // Handle RISK LEVEL line — render as styled badge
   t = t.replace(
     /^RISK LEVEL:\s*(High|Medium|Low)/im,
     (_, level) => `__RISK__${level}__RISK__`
   );
-
   return t;
 }
 
@@ -58,22 +49,12 @@ function RiskBadge({ level }) {
   };
   const c = colors[level] || colors.Medium;
   return (
-    <div
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "6px",
-        background: c.bg,
-        border: `1px solid ${c.border}`,
-        borderRadius: "6px",
-        padding: "4px 10px",
-        marginBottom: "12px",
-        fontSize: "13px",
-        fontWeight: "600",
-        color: c.text,
-        letterSpacing: "0.02em",
-      }}
-    >
+    <div style={{
+      display: "inline-flex", alignItems: "center", gap: 6,
+      background: c.bg, border: `1px solid ${c.border}`,
+      borderRadius: 6, padding: "4px 10px", marginBottom: 12,
+      fontSize: 13, fontWeight: 600, color: c.text,
+    }}>
       {c.emoji} Risk Level: {level}
     </div>
   );
@@ -83,54 +64,28 @@ function MessageContent({ text }) {
   const riskMatch = text.match(/__RISK__(High|Medium|Low)__RISK__/i);
   const level = riskMatch ? riskMatch[1] : null;
   const cleanText = text.replace(/__RISK__(High|Medium|Low)__RISK__\n?/i, "").trim();
-
   const lines = cleanText.split("\n");
 
   return (
     <div>
       {level && <RiskBadge level={level} />}
       {lines.map((line, i) => {
-        if (!line.trim()) return <div key={i} style={{ height: "8px" }} />;
-        // Numbered list item
+        if (!line.trim()) return <div key={i} style={{ height: 8 }} />;
         const numMatch = line.match(/^(\d+)\.\s+(.*)/);
         if (numMatch) {
           return (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                gap: "10px",
-                marginBottom: "6px",
-                alignItems: "flex-start",
-              }}
-            >
-              <span
-                style={{
-                  minWidth: "22px",
-                  height: "22px",
-                  background: "#0a84ff",
-                  color: "#fff",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "11px",
-                  fontWeight: "700",
-                  flexShrink: 0,
-                  marginTop: "1px",
-                }}
-              >
-                {numMatch[1]}
-              </span>
+            <div key={i} style={{ display: "flex", gap: 10, marginBottom: 6, alignItems: "flex-start" }}>
+              <span style={{
+                minWidth: 22, height: 22, background: "#0a84ff", color: "#fff",
+                borderRadius: "50%", display: "flex", alignItems: "center",
+                justifyContent: "center", fontSize: 11, fontWeight: 700,
+                flexShrink: 0, marginTop: 2,
+              }}>{numMatch[1]}</span>
               <span style={{ lineHeight: "1.6", flex: 1 }}>{numMatch[2]}</span>
             </div>
           );
         }
-        return (
-          <p key={i} style={{ margin: "0 0 6px 0", lineHeight: "1.65" }}>
-            {line}
-          </p>
-        );
+        return <p key={i} style={{ margin: "0 0 6px 0", lineHeight: 1.65 }}>{line}</p>;
       })}
     </div>
   );
@@ -139,72 +94,40 @@ function MessageContent({ text }) {
 function BlurredMessage() {
   return (
     <div style={{ position: "relative" }}>
-      <div
-        style={{
-          filter: "blur(5px)",
-          userSelect: "none",
-          pointerEvents: "none",
-          lineHeight: "1.65",
-          color: "#333",
-        }}
-      >
-        <p>
-          Based on the details provided, this assessment identifies several key
-          compliance considerations that require your attention. The regulatory
-          framework applicable to your organisation creates specific obligations
-          around data handling, internal controls, and reporting.
-        </p>
-        <p>
-          1. Your current data processing practices present exposure under
-          applicable data protection law.
-        </p>
-        <p>
-          2. Internal policy documentation does not meet regulatory standards in
-          its current form.
-        </p>
+      <div style={{ filter: "blur(5px)", userSelect: "none", pointerEvents: "none", lineHeight: 1.65, color: "#333" }}>
+        <p>Based on the details provided, this assessment identifies several key compliance considerations that require your attention.</p>
+        <p>1. Your current data processing practices present exposure under applicable data protection law.</p>
+        <p>2. Internal policy documentation does not meet regulatory standards in its current form.</p>
       </div>
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "12px",
-          background: "rgba(255,255,255,0.6)",
-          backdropFilter: "blur(2px)",
-          borderRadius: "12px",
-        }}
-      >
-        <p
-          style={{
-            fontWeight: "600",
-            fontSize: "14px",
-            color: "#111",
-            textAlign: "center",
-            margin: 0,
-          }}
-        >
+      <div style={{
+        position: "absolute", inset: 0,
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12,
+        background: "rgba(255,255,255,0.65)", backdropFilter: "blur(2px)", borderRadius: 12,
+      }}>
+        <p style={{ fontWeight: 600, fontSize: 14, color: "#111", textAlign: "center", margin: 0 }}>
           You've reached the free preview limit.
         </p>
-        <a
-          href={MAILTO_LINK}
+        <button
+          onClick={() => { window.location.href = MAILTO_LINK; }}
           style={{
-            background: "#0a84ff",
-            color: "#fff",
-            padding: "9px 18px",
-            borderRadius: "8px",
-            fontSize: "13px",
-            fontWeight: "600",
-            textDecoration: "none",
-            display: "inline-block",
+            background: "#0a84ff", color: "#fff", padding: "9px 18px",
+            borderRadius: 8, fontSize: 13, fontWeight: 600,
+            border: "none", cursor: "pointer", fontFamily: "inherit",
           }}
         >
           Contact Bolu to continue →
-        </a>
+        </button>
       </div>
     </div>
+  );
+}
+
+function Avatar() {
+  return (
+    <div style={{
+      width: 32, height: 32, borderRadius: "50%",
+      background: "#0a84ff", flexShrink: 0, marginTop: 2,
+    }} />
   );
 }
 
@@ -213,27 +136,13 @@ function Msg({ role, text, isLocked }) {
 
   if (isLocked) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-start",
-          marginBottom: "18px",
-        }}
-      >
-        <div style={{ display: "flex", gap: "10px", maxWidth: "80%", alignItems: "flex-start" }}>
+      <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 18 }}>
+        <div style={{ display: "flex", gap: 10, maxWidth: "80%", alignItems: "flex-start" }}>
           <Avatar />
-          <div
-            style={{
-              background: "#fff",
-              border: "1px solid #e8e8e8",
-              borderRadius: "14px",
-              padding: "14px 16px",
-              fontSize: "14px",
-              color: "#1a1a1a",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-              flex: 1,
-            }}
-          >
+          <div style={{
+            background: "#fff", border: "1px solid #e8e8e8", borderRadius: 14,
+            padding: "14px 16px", fontSize: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.06)", flex: 1,
+          }}>
             <BlurredMessage />
           </div>
         </div>
@@ -241,47 +150,27 @@ function Msg({ role, text, isLocked }) {
     );
   }
 
-  const formatted = formatResponse(text);
+  const formatted = isUser ? text : formatResponse(text);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: isUser ? "flex-end" : "flex-start",
-        marginBottom: "18px",
-      }}
-    >
+    <div style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", marginBottom: 18 }}>
       {!isUser && (
-        <div style={{ display: "flex", gap: "10px", maxWidth: "80%", alignItems: "flex-start" }}>
+        <div style={{ display: "flex", gap: 10, maxWidth: "80%", alignItems: "flex-start" }}>
           <Avatar />
-          <div
-            style={{
-              background: "#fff",
-              border: "1px solid #e8e8e8",
-              borderRadius: "14px",
-              padding: "14px 16px",
-              fontSize: "14px",
-              color: "#1a1a1a",
-              lineHeight: "1.65",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-            }}
-          >
+          <div style={{
+            background: "#fff", border: "1px solid #e8e8e8", borderRadius: 14,
+            padding: "14px 16px", fontSize: 14, color: "#1a1a1a",
+            lineHeight: 1.65, boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          }}>
             <MessageContent text={formatted} />
           </div>
         </div>
       )}
       {isUser && (
-        <div
-          style={{
-            background: "#0a84ff",
-            color: "#fff",
-            borderRadius: "14px",
-            padding: "12px 16px",
-            fontSize: "14px",
-            lineHeight: "1.6",
-            maxWidth: "75%",
-          }}
-        >
+        <div style={{
+          background: "#0a84ff", color: "#fff", borderRadius: 14,
+          padding: "12px 16px", fontSize: 14, lineHeight: 1.6, maxWidth: "75%",
+        }}>
           {text}
         </div>
       )}
@@ -289,19 +178,13 @@ function Msg({ role, text, isLocked }) {
   );
 }
 
-function Avatar() {
-  return (
-    <div
-      style={{
-        width: "32px",
-        height: "32px",
-        borderRadius: "50%",
-        background: "#0a84ff",
-        flexShrink: 0,
-        marginTop: "2px",
-      }}
-    />
-  );
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 function EmailGate({ onEnter }) {
@@ -312,14 +195,8 @@ function EmailGate({ onEnter }) {
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    if (!name.trim() || !email.trim()) {
-      setError("Please enter your name and email.");
-      return;
-    }
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      setError("Please enter a valid email address.");
-      return;
-    }
+    if (!name.trim() || !email.trim()) { setError("Please enter your name and email."); return; }
+    if (!/\S+@\S+\.\S+/.test(email)) { setError("Please enter a valid email address."); return; }
     setSubmitting(true);
     try {
       await fetch("https://formspree.io/f/xpwrjkwa", {
@@ -332,58 +209,58 @@ function EmailGate({ onEnter }) {
     onEnter({ name, email, org });
   };
 
+  const inputStyle = {
+    width: "100%",
+    padding: "11px 13px",
+    borderRadius: 10,
+    border: "1px solid #d0d0d0",
+    fontSize: 15,
+    fontFamily: "inherit",
+    color: "#111111",
+    background: "#ffffff",
+    outline: "none",
+    boxSizing: "border-box",
+    WebkitTextFillColor: "#111111",
+    WebkitAppearance: "none",
+    appearance: "none",
+    display: "block",
+  };
+
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#f5f7fa",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "24px",
-        fontFamily:
-          "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      }}
-    >
-      <div
-        style={{
-          background: "#fff",
-          borderRadius: "20px",
-          padding: "40px 36px",
-          maxWidth: "420px",
-          width: "100%",
-          boxShadow: "0 4px 32px rgba(0,0,0,0.08)",
-        }}
-      >
-        <div
-          style={{
-            width: "48px",
-            height: "48px",
-            background: "#0a84ff",
-            borderRadius: "14px",
-            marginBottom: "20px",
-          }}
-        />
-        <h1
-          style={{
-            fontSize: "22px",
-            fontWeight: "700",
-            color: "#111",
-            margin: "0 0 8px 0",
-          }}
-        >
+    <div style={{
+      minHeight: "100vh", background: "#f5f7fa",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: 24,
+      fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    }}>
+      <style>{`
+        input[type="text"], input[type="email"] {
+          -webkit-text-fill-color: #111111 !important;
+          color: #111111 !important;
+          background-color: #ffffff !important;
+        }
+        input[type="text"]::placeholder, input[type="email"]::placeholder {
+          color: #aaaaaa !important;
+          -webkit-text-fill-color: #aaaaaa !important;
+        }
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus {
+          -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+          -webkit-text-fill-color: #111111 !important;
+          transition: background-color 9999s ease-in-out 0s;
+        }
+      `}</style>
+      <div style={{
+        background: "#fff", borderRadius: 20, padding: "40px 36px",
+        maxWidth: 420, width: "100%", boxShadow: "0 4px 32px rgba(0,0,0,0.08)",
+      }}>
+        <div style={{ width: 48, height: 48, background: "#0a84ff", borderRadius: 14, marginBottom: 20 }} />
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111", margin: "0 0 8px 0" }}>
           Cadence Compliance
         </h1>
-        <p
-          style={{
-            fontSize: "14px",
-            color: "#666",
-            margin: "0 0 28px 0",
-            lineHeight: "1.6",
-          }}
-        >
-          AI-powered compliance guidance from a qualified lawyer and Chartered
-          Arbitrator. Enter your details to begin.
+        <p style={{ fontSize: 14, color: "#666", margin: "0 0 28px 0", lineHeight: 1.6 }}>
+          AI-powered compliance guidance from a qualified lawyer and Chartered Arbitrator. Enter your details to begin.
         </p>
 
         {[
@@ -391,16 +268,8 @@ function EmailGate({ onEnter }) {
           { label: "Email Address", val: email, set: setEmail, type: "email", ph: "you@company.com" },
           { label: "Organisation (optional)", val: org, set: setOrg, type: "text", ph: "Company or firm name" },
         ].map(({ label, val, set, type, ph }) => (
-          <div key={label} style={{ marginBottom: "16px" }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: "13px",
-                fontWeight: "600",
-                color: "#333",
-                marginBottom: "6px",
-              }}
-            >
+          <div key={label} style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#333", marginBottom: 6 }}>
               {label}
             </label>
             <input
@@ -409,39 +278,21 @@ function EmailGate({ onEnter }) {
               onChange={(e) => set(e.target.value)}
               placeholder={ph}
               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                borderRadius: "10px",
-                border: "1px solid #e0e0e0",
-                fontSize: "14px",
-                outline: "none",
-                boxSizing: "border-box",
-                fontFamily: "inherit",
-                color: "#111",
-              }}
+              style={inputStyle}
             />
           </div>
         ))}
 
-        {error && (
-          <p style={{ color: "#cc0000", fontSize: "13px", marginBottom: "12px" }}>
-            {error}
-          </p>
-        )}
+        {error && <p style={{ color: "#cc0000", fontSize: 13, marginBottom: 12 }}>{error}</p>}
 
         <button
           onClick={handleSubmit}
           disabled={submitting}
           style={{
-            width: "100%",
-            padding: "12px",
+            width: "100%", padding: 12,
             background: submitting ? "#7db8f5" : "#0a84ff",
-            color: "#fff",
-            border: "none",
-            borderRadius: "12px",
-            fontSize: "15px",
-            fontWeight: "600",
+            color: "#fff", border: "none", borderRadius: 12,
+            fontSize: 15, fontWeight: 600,
             cursor: submitting ? "not-allowed" : "pointer",
             fontFamily: "inherit",
           }}
@@ -449,17 +300,8 @@ function EmailGate({ onEnter }) {
           {submitting ? "Starting..." : "Start Consultation"}
         </button>
 
-        <p
-          style={{
-            fontSize: "11px",
-            color: "#aaa",
-            textAlign: "center",
-            marginTop: "16px",
-            lineHeight: "1.5",
-          }}
-        >
-          By continuing you agree that responses are for informational purposes.
-          A full written assessment is available upon request.
+        <p style={{ fontSize: 11, color: "#aaa", textAlign: "center", marginTop: 16, lineHeight: 1.5 }}>
+          By continuing you agree that responses are for informational purposes. A full written assessment is available upon request.
         </p>
       </div>
     </div>
@@ -471,7 +313,10 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pdfFile, setPdfFile] = useState(null);
+  const fileRef = useRef(null);
   const bottomRef = useRef(null);
+  const textareaRef = useRef(null);
 
   const assistantCount = messages.filter((m) => m.role === "assistant").length;
   const isLocked = assistantCount >= 3;
@@ -481,34 +326,56 @@ export default function App() {
   }, [messages, loading]);
 
   const send = async (text) => {
-    if (!text.trim() || loading || isLocked) return;
-    const userMsg = { role: "user", content: text };
-    const next = [...messages, userMsg];
-    setMessages(next.map((m) => ({ role: m.role, text: m.content || m.text })));
+    const hasText = !!(text && text.trim());
+    const hasPdf = !!pdfFile;
+    if ((!hasText && !hasPdf) || loading || isLocked) return;
+
+    let userContent;
+    let userDisplayText = hasText ? text.trim() : "";
+
+    if (hasPdf) {
+      const base64 = await readFileAsBase64(pdfFile);
+      userContent = [
+        { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } },
+        { type: "text", text: hasText ? text.trim() : "Please review this document for compliance issues." },
+      ];
+      userDisplayText = `📄 ${pdfFile.name}${hasText ? " — " + text.trim() : ""}`;
+    } else {
+      userContent = text.trim();
+    }
+
+    const newUserMsg = { role: "user", content: userContent, displayText: userDisplayText };
+    const updatedMessages = [...messages, newUserMsg];
+    setMessages(updatedMessages);
     setInput("");
+    setPdfFile(null);
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
     setLoading(true);
 
     try {
+      const apiMessages = updatedMessages.map((m) => ({ role: m.role, content: m.content }));
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: next.map((m) => ({
-            role: m.role,
-            content: m.content || m.text,
-          })),
-          system: SYSTEM_PROMPT,
-        }),
+        body: JSON.stringify({ messages: apiMessages, system: SYSTEM_PROMPT }),
       });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`API ${res.status}: ${errText}`);
+      }
+
       const data = await res.json();
-      const reply =
-        data?.content?.[0]?.text || "Something went wrong. Please try again.";
-      setMessages((prev) => [...prev, { role: "assistant", text: reply }]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", text: "Something went wrong. Please try again." },
-      ]);
+      const reply = data?.content?.[0]?.text || "Something went wrong. Please try again.";
+      setMessages((prev) => [...prev, { role: "assistant", content: reply, displayText: reply }]);
+    } catch (err) {
+      console.error("Chat error:", err);
+      setMessages((prev) => [...prev, {
+        role: "assistant",
+        content: "Something went wrong. Please try again.",
+        displayText: "Something went wrong. Please try again.",
+      }]);
     }
     setLoading(false);
   };
@@ -516,114 +383,80 @@ export default function App() {
   if (!user) return <EmailGate onEnter={setUser} />;
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#f5f7fa",
-        fontFamily:
-          "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <div style={{
+      minHeight: "100vh", background: "#f5f7fa",
+      fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      display: "flex", flexDirection: "column",
+    }}>
+      <style>{`
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        body { margin: 0; }
+        textarea {
+          color: #111111 !important;
+          background-color: #ffffff !important;
+          -webkit-text-fill-color: #111111 !important;
+        }
+        textarea::placeholder { color: #999 !important; -webkit-text-fill-color: #999 !important; }
+        @keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+        .msg-in { animation: fadeIn 0.2s ease; }
+      `}</style>
+
       {/* Header */}
-      <div
-        style={{
-          background: "#fff",
-          borderBottom: "1px solid #ebebeb",
-          padding: "0 20px",
-          height: "58px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div
-            style={{
-              width: "30px",
-              height: "30px",
-              background: "#0a84ff",
-              borderRadius: "8px",
-            }}
-          />
-          <span style={{ fontWeight: "700", fontSize: "16px", color: "#111" }}>
-            Cadence Compliance
-          </span>
+      <div style={{
+        background: "#fff", borderBottom: "1px solid #ebebeb",
+        padding: "0 20px", height: 58,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        position: "sticky", top: 0, zIndex: 10,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 30, height: 30, background: "#0a84ff", borderRadius: 8 }} />
+          <span style={{ fontWeight: 700, fontSize: 16, color: "#111" }}>Cadence Compliance</span>
         </div>
-        <a
-          href={MAILTO_LINK}
+        <button
+          onClick={() => { window.location.href = MAILTO_LINK; }}
           style={{
-            fontSize: "13px",
-            color: "#0a84ff",
-            textDecoration: "none",
-            fontWeight: "500",
+            fontSize: 13, color: "#0a84ff", fontWeight: 600,
+            background: "none", border: "none", cursor: "pointer",
+            fontFamily: "inherit", padding: "6px 0",
           }}
         >
           Contact Bolu
-        </a>
+        </button>
       </div>
 
       {/* Chat area */}
-      <div
-        style={{
-          flex: 1,
-          maxWidth: "720px",
-          width: "100%",
-          margin: "0 auto",
-          padding: "24px 20px 140px",
-          boxSizing: "border-box",
-        }}
-      >
+      <div style={{
+        flex: 1, maxWidth: 720, width: "100%",
+        margin: "0 auto", padding: "24px 20px 180px",
+      }}>
         {messages.length === 0 && (
-          <div style={{ paddingTop: "40px" }}>
-            <h2
-              style={{
-                fontSize: "26px",
-                fontWeight: "700",
-                color: "#111",
-                marginBottom: "6px",
-              }}
-            >
+          <div style={{ paddingTop: 32 }}>
+            <h2 style={{ fontSize: 26, fontWeight: 700, color: "#111", margin: "0 0 6px 0" }}>
               Hello, {user.name.split(" ")[0]}.
             </h2>
-            <p style={{ color: "#666", fontSize: "15px", marginBottom: "32px" }}>
-              Ask about compliance requirements, policy gaps, or regulatory risk.
+            <p style={{ color: "#666", fontSize: 15, margin: "0 0 28px 0" }}>
+              Ask about compliance requirements, policy gaps, or regulatory risk. You can also upload a PDF document for review.
             </p>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-                gap: "12px",
-              }}
-            >
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))",
+              gap: 12,
+            }}>
               {SUGGESTED_PROMPTS.map((p) => (
                 <button
                   key={p}
                   onClick={() => send(p)}
                   style={{
-                    background: "#fff",
-                    border: "1px solid #e0e0e0",
-                    borderRadius: "12px",
-                    padding: "14px 16px",
-                    fontSize: "13px",
-                    color: "#333",
-                    cursor: "pointer",
-                    textAlign: "left",
-                    lineHeight: "1.5",
-                    fontFamily: "inherit",
-                    transition: "box-shadow 0.15s",
+                    background: "#fff", border: "1px solid #e0e0e0",
+                    borderRadius: 12, padding: "13px 15px",
+                    fontSize: 13, color: "#333",
+                    cursor: "pointer", textAlign: "left",
+                    lineHeight: 1.5, fontFamily: "inherit",
+                    transition: "box-shadow 0.15s, border-color 0.15s",
                   }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.boxShadow =
-                      "0 2px 12px rgba(0,0,0,0.1)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.boxShadow = "none")
-                  }
+                  onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.1)"; e.currentTarget.style.borderColor = "#c0c0c0"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "#e0e0e0"; }}
                 >
                   {p}
                 </button>
@@ -633,169 +466,166 @@ export default function App() {
         )}
 
         {messages.map((m, i) => {
-          const assistantIndex = messages
-            .slice(0, i + 1)
-            .filter((x) => x.role === "assistant").length;
+          const assistantIndex = messages.slice(0, i + 1).filter((x) => x.role === "assistant").length;
           const locked = m.role === "assistant" && assistantIndex > 3;
-          return <Msg key={i} role={m.role} text={m.text} isLocked={locked} />;
+          return (
+            <div key={i} className="msg-in">
+              <Msg role={m.role} text={m.displayText || (typeof m.content === "string" ? m.content : "")} isLocked={locked} />
+            </div>
+          );
         })}
 
         {loading && (
-          <div style={{ display: "flex", gap: "10px", marginBottom: "18px", alignItems: "flex-start" }}>
+          <div style={{ display: "flex", gap: 10, marginBottom: 18, alignItems: "flex-start" }}>
             <Avatar />
-            <div
-              style={{
-                background: "#fff",
-                border: "1px solid #e8e8e8",
-                borderRadius: "14px",
-                padding: "14px 16px",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-              }}
-            >
-              <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-                {[0, 1, 2].map((i) => (
-                  <div
-                    key={i}
-                    style={{
-                      width: "7px",
-                      height: "7px",
-                      borderRadius: "50%",
-                      background: "#0a84ff",
-                      animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
-                    }}
-                  />
+            <div style={{
+              background: "#fff", border: "1px solid #e8e8e8",
+              borderRadius: 14, padding: "14px 16px",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+            }}>
+              <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+                {[0, 1, 2].map((j) => (
+                  <div key={j} style={{
+                    width: 7, height: 7, borderRadius: "50%", background: "#0a84ff",
+                    animation: `bounce 1.2s ease-in-out ${j * 0.2}s infinite`,
+                  }} />
                 ))}
               </div>
             </div>
           </div>
         )}
-
         <div ref={bottomRef} />
       </div>
 
       {/* Input bar */}
-      <div
-        style={{
-          position: "fixed",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          background: "rgba(245,247,250,0.92)",
-          backdropFilter: "blur(12px)",
-          borderTop: "1px solid #e8e8e8",
-          padding: "12px 20px 20px",
-        }}
-      >
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, right: 0,
+        background: "rgba(245,247,250,0.96)",
+        backdropFilter: "blur(12px)",
+        borderTop: "1px solid #e8e8e8",
+        padding: "10px 20px 22px",
+      }}>
         {isLocked ? (
-          <div
-            style={{
-              maxWidth: "720px",
-              margin: "0 auto",
-              background: "#fff",
-              borderRadius: "14px",
-              padding: "16px 18px",
-              border: "1px solid #e0e0e0",
-              textAlign: "center",
-            }}
-          >
-            <p style={{ color: "#333", fontSize: "14px", margin: "0 0 10px 0", fontWeight: "500" }}>
+          <div style={{
+            maxWidth: 720, margin: "0 auto",
+            background: "#fff", borderRadius: 14, padding: "16px 18px",
+            border: "1px solid #e0e0e0", textAlign: "center",
+          }}>
+            <p style={{ color: "#333", fontSize: 14, margin: "0 0 10px 0", fontWeight: 500 }}>
               You've reached the free preview limit.
             </p>
-            <a
-              href={MAILTO_LINK}
+            <button
+              onClick={() => { window.location.href = MAILTO_LINK; }}
               style={{
-                background: "#0a84ff",
-                color: "#fff",
-                padding: "9px 20px",
-                borderRadius: "9px",
-                fontSize: "13px",
-                fontWeight: "600",
-                textDecoration: "none",
-                display: "inline-block",
+                background: "#0a84ff", color: "#fff",
+                padding: "9px 20px", borderRadius: 9,
+                fontSize: 13, fontWeight: 600,
+                border: "none", cursor: "pointer", fontFamily: "inherit",
               }}
             >
               Contact Bolu to continue →
-            </a>
+            </button>
           </div>
         ) : (
-          <div
-            style={{
-              maxWidth: "720px",
-              margin: "0 auto",
-              display: "flex",
-              gap: "10px",
-              alignItems: "flex-end",
-            }}
-          >
-            <textarea
-              rows={1}
-              value={input}
-              onChange={(e) => {
-                setInput(e.target.value);
-                e.target.style.height = "auto";
-                e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  send(input);
-                }
-              }}
-              placeholder="Ask a compliance question..."
-              style={{
-                flex: 1,
-                padding: "12px 14px",
-                borderRadius: "12px",
-                border: "1px solid #ddd",
-                fontSize: "14px",
-                fontFamily: "inherit",
-                resize: "none",
-                outline: "none",
-                background: "#fff",
-                lineHeight: "1.5",
-                boxSizing: "border-box",
-                overflowY: "hidden",
-                color: "#111",
-              }}
-            />
-            <button
-              onClick={() => send(input)}
-              disabled={loading || !input.trim()}
-              style={{
-                width: "42px",
-                height: "42px",
-                borderRadius: "10px",
-                background: loading || !input.trim() ? "#c5dff8" : "#0a84ff",
-                border: "none",
-                cursor: loading || !input.trim() ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"
-                  stroke="#fff"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
+          <div style={{ maxWidth: 720, margin: "0 auto" }}>
+            {pdfFile && (
+              <div style={{
+                display: "flex", alignItems: "center", gap: 8,
+                background: "#e8f0fe", borderRadius: 8,
+                padding: "6px 10px", marginBottom: 8,
+                fontSize: 13, color: "#0a84ff", fontWeight: 500,
+              }}>
+                <span>📄 {pdfFile.name}</span>
+                <button
+                  onClick={() => setPdfFile(null)}
+                  style={{
+                    marginLeft: "auto", background: "none", border: "none",
+                    color: "#0a84ff", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0,
+                  }}
+                >×</button>
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+              {/* PDF attach */}
+              <button
+                onClick={() => fileRef.current?.click()}
+                title="Attach PDF"
+                style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  background: "#fff", border: "1px solid #ddd",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  cursor: "pointer", flexShrink: 0, color: "#555",
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+                </svg>
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="application/pdf"
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) setPdfFile(f);
+                  e.target.value = "";
+                }}
+              />
+
+              {/* Text input */}
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                value={input}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  e.target.style.height = "auto";
+                  e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    send(input);
+                  }
+                }}
+                placeholder={pdfFile ? "Add a question about this document..." : "Ask a compliance question..."}
+                style={{
+                  flex: 1, padding: "10px 13px",
+                  borderRadius: 12, border: "1px solid #ddd",
+                  fontSize: 14, fontFamily: "inherit",
+                  resize: "none", outline: "none",
+                  background: "#ffffff",
+                  color: "#111111",
+                  WebkitTextFillColor: "#111111",
+                  lineHeight: 1.5,
+                  overflowY: "hidden",
+                  minHeight: 40,
+                }}
+              />
+
+              {/* Send */}
+              <button
+                onClick={() => send(input)}
+                disabled={loading || (!input.trim() && !pdfFile)}
+                style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  background: (loading || (!input.trim() && !pdfFile)) ? "#c5dff8" : "#0a84ff",
+                  border: "none",
+                  cursor: (loading || (!input.trim() && !pdfFile)) ? "not-allowed" : "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                  <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
           </div>
         )}
       </div>
-
-      <style>{`
-        @keyframes bounce {
-          0%, 80%, 100% { transform: translateY(0); }
-          40% { transform: translateY(-6px); }
-        }
-        * { -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; }
-      `}</style>
     </div>
   );
 }
