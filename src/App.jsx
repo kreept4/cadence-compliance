@@ -7,12 +7,12 @@ const MAILTO_LINK =
 const SYSTEM_PROMPT = `You are a specialist compliance advisor operating under Cadence Compliance, run by Bolu Ogunleye — a qualified lawyer and Chartered Arbitrator. You provide expert, structured compliance guidance.
 
 RESPONSE RULES — follow these exactly:
-1. Never use hyphens (-) as bullet points or list markers. Use numbers (1. 2. 3.) for all lists.
-2. Never use markdown symbols: no **, no ##, no *, no ---, no >.
-3. Where a risk level applies to the overall situation, start your response with a single line: RISK LEVEL: [High/Medium/Low] followed by a blank line. Use High for serious regulatory exposure, Medium for moderate gaps, Low for minor or procedural issues. Only include this where genuinely relevant.
-4. Use numbered lists where there are multiple points. Do not mush everything into a paragraph when there are distinct items.
-5. Write in a clear, professional, consultant tone — not robotic, not overly casual.
-6. Keep responses focused and scannable. Use short paragraphs between numbered lists where needed.
+1. Never use hyphens (-) as bullet points or list markers.
+2. Use **bold text** to label section headings or key terms — for example: **Data Protection** or **Key Finding:**. Do this naturally where it aids clarity.
+3. Where a risk level applies to the overall situation, start your response with a single line: RISK LEVEL: [High/Medium/Low] followed by a blank line. Only include this where genuinely relevant.
+4. Only use numbered lists (1. 2. 3.) when there are 3 or more clearly distinct, parallel items that cannot flow naturally as prose. For 1 or 2 points, write them as sentences or short paragraphs instead.
+5. Write in a clear, professional, consultant tone — not robotic, not overly casual. Default to well-structured paragraphs over lists.
+6. Keep responses focused and scannable. Do not number things just for the sake of structure.
 7. Do not pepper the user with multiple questions. Ask at most one clarifying question per response, and only when genuinely needed.
 8. Do not recommend the user "consult a lawyer" — you are the specialist. Give direct, informed guidance.
 9. Never start a sentence with a hyphen. Never use " - " as punctuation mid-sentence.
@@ -39,6 +39,15 @@ function formatResponse(text) {
     (_, level) => `__RISK__${level}__RISK__`
   );
   return t;
+}
+
+// Renders a line of text, converting **bold** markers to <strong> elements
+function renderBold(text) {
+  const parts = text.split(/\*\*(.*?)\*\*/g);
+  if (parts.length === 1) return text;
+  return parts.map((part, i) =>
+    i % 2 === 1 ? <strong key={i} style={{ fontWeight: 700 }}>{part}</strong> : part
+  );
 }
 
 function RiskBadge({ level }) {
@@ -74,18 +83,18 @@ function MessageContent({ text }) {
         const numMatch = line.match(/^(\d+)\.\s+(.*)/);
         if (numMatch) {
           return (
-            <div key={i} style={{ display: "flex", gap: 10, marginBottom: 6, alignItems: "flex-start" }}>
+            <div key={i} style={{ display: "flex", gap: 10, marginBottom: 8, alignItems: "flex-start" }}>
               <span style={{
                 minWidth: 22, height: 22, background: "#0a84ff", color: "#fff",
                 borderRadius: "50%", display: "flex", alignItems: "center",
                 justifyContent: "center", fontSize: 11, fontWeight: 700,
                 flexShrink: 0, marginTop: 2,
               }}>{numMatch[1]}</span>
-              <span style={{ lineHeight: "1.6", flex: 1 }}>{numMatch[2]}</span>
+              <span style={{ lineHeight: "1.6", flex: 1 }}>{renderBold(numMatch[2])}</span>
             </div>
           );
         }
-        return <p key={i} style={{ margin: "0 0 6px 0", lineHeight: 1.65 }}>{line}</p>;
+        return <p key={i} style={{ margin: "0 0 6px 0", lineHeight: 1.65 }}>{renderBold(line)}</p>;
       })}
     </div>
   );
