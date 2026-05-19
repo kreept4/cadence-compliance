@@ -419,8 +419,7 @@ export default function App() {
         position: "sticky", top: 0, zIndex: 10,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 30, height: 30, background: "#0a84ff", borderRadius: 8 }} />
-          <span style={{ fontWeight: 700, fontSize: 16, color: "#111" }}>Cadence Compliance</span>
+          <img src="/logo.png" alt="Cadence Compliance" style={{ height: 40, width: "auto", objectFit: "contain" }} />
         </div>
         <button
           onClick={() => { window.location.href = MAILTO_LINK; }}
@@ -638,3 +637,4 @@ export default function App() {
     </div>
   );
 }
+
