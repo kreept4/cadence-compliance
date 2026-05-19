@@ -264,10 +264,7 @@ function EmailGate({ onEnter }) {
         background: "#fff", borderRadius: 20, padding: "40px 36px",
         maxWidth: 420, width: "100%", boxShadow: "0 4px 32px rgba(0,0,0,0.08)",
       }}>
-        <div style={{ width: 48, height: 48, background: "#0a84ff", borderRadius: 14, marginBottom: 20 }} />
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#111", margin: "0 0 8px 0" }}>
-          Cadence Compliance
-        </h1>
+        <img src="/logo.png" alt="Cadence Compliance" style={{ height: 52, width: "auto", objectFit: "contain", marginBottom: 20 }} />
         <p style={{ fontSize: 14, color: "#666", margin: "0 0 28px 0", lineHeight: 1.6 }}>
           AI-powered compliance guidance from a qualified lawyer and Chartered Arbitrator. Enter your details to begin.
         </p>
@@ -637,4 +634,5 @@ export default function App() {
     </div>
   );
 }
+
 
