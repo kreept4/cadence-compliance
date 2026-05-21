@@ -1,22 +1,23 @@
-import { useState, useRef, useEffect } from "react";
+﻿import { useState, useRef, useEffect } from "react";
 import "./App.css";
 
 const MAILTO_LINK =
   "mailto:bolu.compliance@gmail.com?subject=Cadence%20Compliance%20Inquiry&body=Hi%20Bolu%2C%0A%0AI%20just%20used%20the%20Cadence%20Compliance%20agent%20and%20I%27d%20like%20to%20discuss%20a%20full%20assessment%20for%20my%20organisation.%0A%0A%5BBrief%20description%20of%20your%20business%20and%20what%20you%20need%20help%20with%5D%0A%0ALooking%20forward%20to%20hearing%20from%20you.";
 
-const SYSTEM_PROMPT = `You are a specialist compliance advisor operating under Cadence Compliance, run by Bolu Ogunleye — a qualified lawyer and Chartered Arbitrator. You provide expert, structured compliance guidance.
+const SYSTEM_PROMPT = `You are a specialist compliance advisor operating under Cadence Compliance, founded by Bolu Ogunleye, a qualified lawyer and Chartered Arbitrator with deep experience in Governance, Risk and Compliance. You provide expert, structured compliance guidance to businesses operating in regulated sectors.
 
-RESPONSE RULES — follow these exactly:
+RESPONSE RULES - follow these exactly:
 1. Never use hyphens (-) as bullet points or list markers.
-2. Use **bold text** to label section headings or key terms — for example: **Data Protection** or **Key Finding:**. Do this naturally where it aids clarity.
+2. Use **bold text** to label section headings or key terms. For example: **Data Protection** or **Key Finding:**. Do this naturally where it aids clarity.
 3. Where a risk level applies to the overall situation, start your response with a single line: RISK LEVEL: [High/Medium/Low] followed by a blank line. Only include this where genuinely relevant.
-4. Only use numbered lists (1. 2. 3.) when there are 3 or more clearly distinct, parallel items that cannot flow naturally as prose. For 1 or 2 points, write them as sentences or short paragraphs instead.
-5. Write in a clear, professional, consultant tone — not robotic, not overly casual. Default to well-structured paragraphs over lists.
+4. Only use numbered lists (1. 2. 3.) when there are 3 or more clearly distinct, parallel items. For 1 or 2 points, write them as sentences or short paragraphs instead.
+5. Write in a clear, professional, consultant tone. Default to well-structured paragraphs over lists.
 6. Keep responses focused and scannable. Do not number things just for the sake of structure.
 7. Do not pepper the user with multiple questions. Ask at most one clarifying question per response, and only when genuinely needed.
-8. Do not recommend the user "consult a lawyer" — you are the specialist. Give direct, informed guidance.
+8. Do not recommend the user "consult a lawyer" - you are the specialist. Give direct, informed guidance.
 9. Never start a sentence with a hyphen. Never use " - " as punctuation mid-sentence.
-10. Sign off responses where appropriate by noting that a full written assessment is available through Cadence Compliance.`;
+10. On your THIRD response in any conversation, after giving your substantive answer, add this closing line naturally: "A full written compliance audit covering these areas in detail is available through Cadence Compliance for a one-time fee of $300. If that would be useful, feel free to reach out to bolu.compliance@gmail.com."
+11. Be genuinely helpful while making clear that a thorough documented assessment requires a formal engagement with Cadence Compliance.`;
 
 const SUGGESTED_PROMPTS = [
   "Review my privacy policy for NDPR compliance",
@@ -27,7 +28,7 @@ const SUGGESTED_PROMPTS = [
 
 function stripHyphens(text) {
   let cleaned = text.replace(/^(\s*)-\s+/gm, (_, indent) => indent);
-  cleaned = cleaned.replace(/\s+-\s+/g, " — ");
+  cleaned = cleaned.replace(/\s+-\s+/g, " â€” ");
   cleaned = cleaned.replace(/^-\s/gm, "");
   return cleaned;
 }
@@ -52,9 +53,9 @@ function renderBold(text) {
 
 function RiskBadge({ level }) {
   const colors = {
-    High: { bg: "#fff0f0", border: "#ff4d4d", text: "#cc0000", emoji: "🔴" },
-    Medium: { bg: "#fffbf0", border: "#f5a623", text: "#b07800", emoji: "🟡" },
-    Low: { bg: "#f0fff4", border: "#34c759", text: "#1a7a35", emoji: "🟢" },
+    High: { bg: "#fff0f0", border: "#ff4d4d", text: "#cc0000", emoji: "ðŸ”´" },
+    Medium: { bg: "#fffbf0", border: "#f5a623", text: "#b07800", emoji: "ðŸŸ¡" },
+    Low: { bg: "#f0fff4", border: "#34c759", text: "#1a7a35", emoji: "ðŸŸ¢" },
   };
   const c = colors[level] || colors.Medium;
   return (
@@ -124,7 +125,7 @@ function BlurredMessage() {
             border: "none", cursor: "pointer", fontFamily: "inherit",
           }}
         >
-          Contact Bolu to continue →
+          Contact Bolu to continue â†’
         </button>
       </div>
     </div>
@@ -325,7 +326,7 @@ export default function App() {
   const textareaRef = useRef(null);
 
   const assistantCount = messages.filter((m) => m.role === "assistant").length;
-  const isLocked = assistantCount >= 3;
+  const isLocked = assistantCount >= 5;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -345,7 +346,7 @@ export default function App() {
         { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } },
         { type: "text", text: hasText ? text.trim() : "Please review this document for compliance issues." },
       ];
-      userDisplayText = `📄 ${pdfFile.name}${hasText ? " — " + text.trim() : ""}`;
+      userDisplayText = `ðŸ“„ ${pdfFile.name}${hasText ? " â€” " + text.trim() : ""}`;
     } else {
       userContent = text.trim();
     }
@@ -472,7 +473,7 @@ export default function App() {
 
         {messages.map((m, i) => {
           const assistantIndex = messages.slice(0, i + 1).filter((x) => x.role === "assistant").length;
-          const locked = m.role === "assistant" && assistantIndex > 3;
+          const locked = m.role === "assistant" && assistantIndex > 5;
           return (
             <div key={i} className="msg-in">
               <Msg role={m.role} text={m.displayText || (typeof m.content === "string" ? m.content : "")} isLocked={locked} />
@@ -528,7 +529,7 @@ export default function App() {
                 border: "none", cursor: "pointer", fontFamily: "inherit",
               }}
             >
-              Contact Bolu to continue →
+              Contact Bolu to continue â†’
             </button>
           </div>
         ) : (
@@ -540,14 +541,14 @@ export default function App() {
                 padding: "6px 10px", marginBottom: 8,
                 fontSize: 13, color: "#0a84ff", fontWeight: 500,
               }}>
-                <span>📄 {pdfFile.name}</span>
+                <span>ðŸ“„ {pdfFile.name}</span>
                 <button
                   onClick={() => setPdfFile(null)}
                   style={{
                     marginLeft: "auto", background: "none", border: "none",
                     color: "#0a84ff", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0,
                   }}
-                >×</button>
+                >Ã—</button>
               </div>
             )}
 
@@ -634,5 +635,6 @@ export default function App() {
     </div>
   );
 }
+
 
 
