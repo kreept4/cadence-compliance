@@ -47,15 +47,15 @@ function renderBold(text) {
   const parts = text.split(/\*\*(.*?)\*\*/g);
   if (parts.length === 1) return text;
   return parts.map((part, i) =>
-    i % 2 === 1 ? <strong key={i} style={{ fontWeight: 700 }}>{part}</strong> : part
+    i % 2 === 1 ? <strong key={i} style={{ fontWeight: 700, display: "block", textAlign: "center", marginBottom: 4 }}>{part}</strong> : part
   );
 }
 
 function RiskBadge({ level }) {
   const colors = {
-    High: { bg: "#fff0f0", border: "#ff4d4d", text: "#cc0000", emoji: "\uD83D\uDD34" },
-    Medium: { bg: "#fffbf0", border: "#f5a623", text: "#b07800", emoji: "\uD83D\uDFE1" },
-    Low: { bg: "#f0fff4", border: "#34c759", text: "#1a7a35", emoji: "\uD83D\uDFE2" },
+    High: { bg: "#fff0f0", border: "#ff4d4d", text: "#cc0000", emoji: "🔴" },
+    Medium: { bg: "#fffbf0", border: "#f5a623", text: "#b07800", emoji: "🟡" },
+    Low: { bg: "#f0fff4", border: "#34c759", text: "#1a7a35", emoji: "🟢" },
   };
   const c = colors[level] || colors.Medium;
   return (
