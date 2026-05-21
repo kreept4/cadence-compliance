@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const apiKey = process.env.FREEMODEL_API_KEY;
+  const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: "API key not configured" });
   }
@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch("https://cc.freemodel.dev/v1/messages", {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 1500,
         system: system || "",
         messages: messages,
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Freemodel API error:", response.status, errorText);
+      console.error("Anthropic API error:", response.status, errorText);
       return res.status(response.status).json({ error: `API error: ${response.status}` });
     }
 
