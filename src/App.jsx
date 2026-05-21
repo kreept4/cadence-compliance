@@ -170,7 +170,7 @@ function Msg({ role, text, isLocked }) {
           <div style={{
             background: "#fff", border: "1px solid #e8e8e8", borderRadius: 14,
             padding: "14px 16px", fontSize: 14, color: "#1a1a1a",
-            lineHeight: 1.65, boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+            lineHeight: 1.65, boxShadow: "0 1px 4px rgba(0,0,0,0.06)", textAlign: "left",
           }}>
             <MessageContent text={formatted} />
           </div>
@@ -179,7 +179,7 @@ function Msg({ role, text, isLocked }) {
       {isUser && (
         <div style={{
           background: "#0a84ff", color: "#fff", borderRadius: 14,
-          padding: "12px 16px", fontSize: 14, lineHeight: 1.6, maxWidth: "75%",
+          padding: "12px 16px", fontSize: 14, lineHeight: 1.6, maxWidth: "75%", textAlign: "left",
         }}>
           {text}
         </div>
@@ -635,6 +635,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 
