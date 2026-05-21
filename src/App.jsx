@@ -28,7 +28,7 @@ const SUGGESTED_PROMPTS = [
 
 function stripHyphens(text) {
   let cleaned = text.replace(/^(\s*)-\s+/gm, (_, indent) => indent);
-  cleaned = cleaned.replace(/\s+-\s+/g, " â€” ");
+  cleaned = cleaned.replace(/\s+-\s+/g, " \u2014 ");
   cleaned = cleaned.replace(/^-\s/gm, "");
   return cleaned;
 }
@@ -53,9 +53,9 @@ function renderBold(text) {
 
 function RiskBadge({ level }) {
   const colors = {
-    High: { bg: "#fff0f0", border: "#ff4d4d", text: "#cc0000", emoji: "ðŸ”´" },
-    Medium: { bg: "#fffbf0", border: "#f5a623", text: "#b07800", emoji: "ðŸŸ¡" },
-    Low: { bg: "#f0fff4", border: "#34c759", text: "#1a7a35", emoji: "ðŸŸ¢" },
+    High: { bg: "#fff0f0", border: "#ff4d4d", text: "#cc0000", emoji: "\uD83D\uDD34" },
+    Medium: { bg: "#fffbf0", border: "#f5a623", text: "#b07800", emoji: "\uD83D\uDFE1" },
+    Low: { bg: "#f0fff4", border: "#34c759", text: "#1a7a35", emoji: "\uD83D\uDFE2" },
   };
   const c = colors[level] || colors.Medium;
   return (
@@ -346,7 +346,7 @@ export default function App() {
         { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } },
         { type: "text", text: hasText ? text.trim() : "Please review this document for compliance issues." },
       ];
-      userDisplayText = `ðŸ“„ ${pdfFile.name}${hasText ? " â€” " + text.trim() : ""}`;
+      userDisplayText = `\uD83D\uDCC4 ${pdfFile.name}${hasText ? " \u2014 " + text.trim() : ""}`;
     } else {
       userContent = text.trim();
     }
@@ -541,14 +541,14 @@ export default function App() {
                 padding: "6px 10px", marginBottom: 8,
                 fontSize: 13, color: "#0a84ff", fontWeight: 500,
               }}>
-                <span>ðŸ“„ {pdfFile.name}</span>
+                <span>\uD83D\uDCC4 {pdfFile.name}</span>
                 <button
                   onClick={() => setPdfFile(null)}
                   style={{
                     marginLeft: "auto", background: "none", border: "none",
                     color: "#0a84ff", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 0,
                   }}
-                >Ã—</button>
+                >\u00D7</button>
               </div>
             )}
 
@@ -635,6 +635,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 
