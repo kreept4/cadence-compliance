@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import cadenceLogo from "./cadence-logo.webp";
+import cadenceLogo from "./cadence-logo.png";
 
 // Drop your logo file into src/ and update this import path
-// e.g. import cadenceLogo from "./cadence-logo.webp";
+// e.g. import cadenceLogo from "./cadence-logo.png";
 // Then replace LOGO_SVG and LOGO_WHITE_SVG usages with:
 // <img src={cadenceLogo} alt="Cadence Compliance" style={{ height: 32, width: "auto" }} />
 // For now the SVG placeholder is used below — swap it out once you add your file.
@@ -218,7 +218,10 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [inputVal, setInputVal] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const [userMessageCount, setUserMessageCount] = useState(0);
+  const [limitReached, setLimitReached] = useState(false);
   const chatBottomRef = useRef(null);
+  const FREE_LIMIT = 5;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -254,25 +257,32 @@ export default function App() {
 
   const handleSendMessage = async () => {
     const text = inputVal.trim();
-    if (!text || chatLoading) return;
+    if (!text || chatLoading || limitReached) return;
+    const newCount = userMessageCount + 1;
     const updated = [...messages, { role: "user", content: text }];
     setMessages(updated);
     setInputVal("");
+    setUserMessageCount(newCount);
     setChatLoading(true);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: `You are the Cadence Compliance Advisor, an AI tool on the Cadence Compliance website run by Boluwatife Ogunleye, a compliance analyst specialising in data protection and regulatory compliance. You help organisations understand their compliance obligations under frameworks including the Nigeria Data Protection Act 2023, the NDPR, HIPAA, AML/CFT regulations, and other applicable frameworks. Be clear, professional, warm, and specific. Do not use hyphens, bullet points presented as dashes, or AI-sounding filler phrases. Write in full sentences with formal but approachable tone. When relevant, suggest that the user book a compliance assessment with Cadence Compliance for personalised advice.`,
-          messages: updated.map((m) => ({ role: m.role, content: m.content })),
-        }),
+        body: JSON.stringify({ messages: updated.map((m) => ({ role: m.role, content: m.content })) }),
       });
       const data = await res.json();
-      const reply = data.content?.[0]?.text || "I am unable to respond at this time. Please try again shortly.";
-      setMessages([...updated, { role: "assistant", content: reply }]);
+      const reply = data.reply || "I am unable to respond at this time. Please try again shortly.";
+      const finalMessages = [...updated, { role: "assistant", content: reply }];
+      if (newCount >= FREE_LIMIT) {
+        setLimitReached(true);
+        setMessages([...finalMessages, {
+          role: "assistant",
+          content: "You have reached the limit for free questions. To continue the conversation and get personalised compliance guidance, please book an assessment or reach out directly to Boluwatife at bolu.compliance@gmail.com.",
+          isLimit: true,
+        }]);
+      } else {
+        setMessages(finalMessages);
+      }
     } catch {
       setMessages([...updated, { role: "assistant", content: "I encountered an error. Please try again." }]);
     } finally {
@@ -785,7 +795,7 @@ export default function App() {
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
         <div style={{ background: "#fff", borderRadius: 20, maxWidth: 460, width: "100%", padding: "44px 40px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 28 }}>
-            <img src={cadenceLogo} alt="Cadence Compliance" style={{ height: 28, width: 90, borderRadius: 0, objectFit: "contain" }} />
+            <img src={cadenceLogo} alt="Cadence Compliance" style={{ height: 34, width: 34, borderRadius: 6, objectFit: "cover" }} />
             <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.3px" }}>Cadence Compliance</span>
           </div>
           <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.5px", marginBottom: 8, fontFamily: "'DM Serif Display', Georgia, serif" }}>Access the Compliance Advisor</h2>
@@ -820,7 +830,7 @@ export default function App() {
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
         <div style={{ background: "#fff", borderBottom: "1px solid #e5e7eb", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <img src={cadenceLogo} alt="Cadence Compliance" style={{ height: 28, width: 90, borderRadius: 0, objectFit: "contain" }} />
+            <img src={cadenceLogo} alt="Cadence Compliance" style={{ height: 34, width: 34, borderRadius: 6, objectFit: "cover" }} />
             <span style={{ fontSize: 15, fontWeight: 700 }}>Compliance Advisor</span>
             <span style={{ fontSize: 12, background: "rgba(10,132,255,0.1)", color: "#0a84ff", borderRadius: 100, padding: "2px 10px", fontWeight: 600 }}>AI</span>
           </div>
@@ -861,12 +871,12 @@ export default function App() {
           <div style={{ maxWidth: 760, margin: "0 auto", display: "flex", gap: 10 }}>
             <input
               style={{ ...styles.input, flex: 1 }}
-              placeholder="Ask a compliance question..."
+              placeholder={limitReached ? "Message limit reached" : "Ask a compliance question..."}
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
+              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && !limitReached && handleSendMessage()}
             />
-            <button onClick={handleSendMessage} disabled={!inputVal.trim() || chatLoading} style={{ ...styles.heroPrimaryBtn, padding: "11px 18px", opacity: !inputVal.trim() || chatLoading ? 0.5 : 1 }}>
+            <button onClick={handleSendMessage} disabled={!inputVal.trim() || chatLoading || limitReached} style={{ ...styles.heroPrimaryBtn, padding: "11px 18px", opacity: !inputVal.trim() || chatLoading ? 0.5 : 1 }}>
               <SendIcon size={16} />
             </button>
           </div>
@@ -911,7 +921,7 @@ export default function App() {
       <nav style={styles.nav}>
         <div style={styles.navInner}>
           <div style={styles.navLogo} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-            <img src={cadenceLogo} alt="Cadence Compliance" style={{ height: 28, width: 90, borderRadius: 0, objectFit: "contain" }} />
+            <img src={cadenceLogo} alt="Cadence Compliance" style={{ height: 34, width: 34, borderRadius: 6, objectFit: "cover" }} />
             <span style={styles.navLogoText}>Cadence Compliance</span>
           </div>
           <div className="desktop-nav" style={styles.navLinks}>
@@ -1089,7 +1099,7 @@ export default function App() {
           <div className="footer-grid" style={styles.footerGrid}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <img src={cadenceLogo} alt="Cadence Compliance" style={{ height: 40, width: 40, borderRadius: 8, objectFit: "contain" }} />
+                <img src={cadenceLogo} alt="Cadence Compliance" style={{ height: 40, width: 40, borderRadius: 8, objectFit: "cover" }} />
                 <span style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Cadence Compliance</span>
               </div>
               <p style={styles.footerBrand}>
@@ -1160,7 +1170,7 @@ export default function App() {
             ) : (
               <>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
-                  <img src={cadenceLogo} alt="Cadence Compliance" style={{ height: 28, width: 90, borderRadius: 0, objectFit: "contain" }} />
+                  <img src={cadenceLogo} alt="Cadence Compliance" style={{ height: 34, width: 34, borderRadius: 6, objectFit: "cover" }} />
                   <span style={{ fontSize: 15, fontWeight: 700 }}>Book a Compliance Assessment</span>
                 </div>
                 <p style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.6, marginBottom: 24 }}>
@@ -1212,4 +1222,3 @@ export default function App() {
     </div>
   );
 }
-
