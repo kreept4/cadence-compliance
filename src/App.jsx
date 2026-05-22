@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import cadenceLogo from "./cadence-logo.png";
 
 // Drop your logo file into src/ and update this import path
 // e.g. import cadenceLogo from "./cadence-logo.png";
@@ -784,7 +785,7 @@ export default function App() {
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
         <div style={{ background: "#fff", borderRadius: 20, maxWidth: 460, width: "100%", padding: "44px 40px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 28 }}>
-            <img src={LOGO_B64} alt="Cadence Compliance" style={{ height: 34, width: 34, borderRadius: 6, objectFit: "cover" }} />
+            <img src={cadenceLogo} alt="Cadence Compliance" style={{ height: 34, width: 34, borderRadius: 6, objectFit: "cover" }} />
             <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.3px" }}>Cadence Compliance</span>
           </div>
           <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.5px", marginBottom: 8, fontFamily: "'DM Serif Display', Georgia, serif" }}>Access the Compliance Advisor</h2>
@@ -819,7 +820,7 @@ export default function App() {
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
         <div style={{ background: "#fff", borderBottom: "1px solid #e5e7eb", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <img src={LOGO_B64} alt="Cadence Compliance" style={{ height: 34, width: 34, borderRadius: 6, objectFit: "cover" }} />
+            <img src={cadenceLogo} alt="Cadence Compliance" style={{ height: 34, width: 34, borderRadius: 6, objectFit: "cover" }} />
             <span style={{ fontSize: 15, fontWeight: 700 }}>Compliance Advisor</span>
             <span style={{ fontSize: 12, background: "rgba(10,132,255,0.1)", color: "#0a84ff", borderRadius: 100, padding: "2px 10px", fontWeight: 600 }}>AI</span>
           </div>
@@ -910,7 +911,7 @@ export default function App() {
       <nav style={styles.nav}>
         <div style={styles.navInner}>
           <div style={styles.navLogo} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-            <img src={LOGO_B64} alt="Cadence Compliance" style={{ height: 34, width: 34, borderRadius: 6, objectFit: "cover" }} />
+            <img src={cadenceLogo} alt="Cadence Compliance" style={{ height: 34, width: 34, borderRadius: 6, objectFit: "cover" }} />
             <span style={styles.navLogoText}>Cadence Compliance</span>
           </div>
           <div className="desktop-nav" style={styles.navLinks}>
@@ -1088,7 +1089,7 @@ export default function App() {
           <div className="footer-grid" style={styles.footerGrid}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <img src={LOGO_B64} alt="Cadence Compliance" style={{ height: 40, width: 40, borderRadius: 8, objectFit: "cover" }} />
+                <img src={cadenceLogo} alt="Cadence Compliance" style={{ height: 40, width: 40, borderRadius: 8, objectFit: "cover" }} />
                 <span style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Cadence Compliance</span>
               </div>
               <p style={styles.footerBrand}>
@@ -1159,7 +1160,7 @@ export default function App() {
             ) : (
               <>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
-                  <img src={LOGO_B64} alt="Cadence Compliance" style={{ height: 34, width: 34, borderRadius: 6, objectFit: "cover" }} />
+                  <img src={cadenceLogo} alt="Cadence Compliance" style={{ height: 34, width: 34, borderRadius: 6, objectFit: "cover" }} />
                   <span style={{ fontSize: 15, fontWeight: 700 }}>Book a Compliance Assessment</span>
                 </div>
                 <p style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.6, marginBottom: 24 }}>
