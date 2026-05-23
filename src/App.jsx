@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import cadenceLogo from "./cadence-logo.webp";
+import cadenceLogo from "./cadence-logo.png";
 
 // Drop your logo file into src/ and update this import path
-// e.g. import cadenceLogo from "./cadence-logo.webp";
+// e.g. import cadenceLogo from "./cadence-logo.png";
 // Then replace LOGO_SVG and LOGO_WHITE_SVG usages with:
 // <img src={cadenceLogo} alt="Cadence Compliance" style={{ height: 32, width: "auto" }} />
 // For now the SVG placeholder is used below — swap it out once you add your file.
@@ -221,6 +221,7 @@ export default function App() {
   const [userMessageCount, setUserMessageCount] = useState(0);
   const [limitReached, setLimitReached] = useState(false);
   const chatBottomRef = useRef(null);
+  const fileRef = useRef(null);
   const FREE_LIMIT = 5;
 
   useEffect(() => {
@@ -511,7 +512,8 @@ export default function App() {
       fontSize: 17,
       color: "#6b7280",
       lineHeight: 1.75,
-      maxWidth: 560,
+      maxWidth: 700,
+      textAlign: "left",
     },
     servicesGrid: {
       display: "grid",
@@ -876,7 +878,6 @@ export default function App() {
     return `<p style="margin:0 0 12px;text-align:justify">${text}</p>`;
   }
 
-  const fileRef = useRef(null);
 
   const handleFileUpload = async (file) => {
     if (!file || limitReached) return;
@@ -1288,7 +1289,7 @@ export default function App() {
             </div>
             <div>
               <div style={styles.footerHeading}>Connect</div>
-              <a href="https://www.linkedin.com/in/ogunleye-boluwatife-aicmc-acarb-8437051a9" target="_blank" rel="noopener noreferrer" className="footer-link" style={{ ...styles.footerLink, display: "flex", alignItems: "center", gap: 6 }}>
+              <a href="https://www.linkedin.com/in/ogunleye-boluwatife-aicmc-acarb-8437051a9" target="_blank" rel="noopener noreferrer" className="footer-link" style={{ ...styles.footerLink, display: "inline-flex", alignItems: "center", gap: 4 }}>
                 LinkedIn <ExternalIcon size={12} />
               </a>
               <a href="mailto:bolu.compliance@gmail.com" className="footer-link" style={styles.footerLink}>bolu.compliance@gmail.com</a>
