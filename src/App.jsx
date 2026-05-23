@@ -863,23 +863,18 @@ export default function App() {
   }
 
   function formatMarkdown(text) {
-    // Bold+italic for citations: ***text***
+    text = text.replace(/—/g, ",");
+    text = text.replace(/^[-–]\s+(.+)$/gm, "<div style='margin:4px 0 4px 8px;text-align:justify'>$1</div>");
     text = text.replace(/\*\*\*(.*?)\*\*\*/g, "<strong><em>$1</em></strong>");
-    // Bold headings: **text**
     text = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-    // Italic: *text*
     text = text.replace(/(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)/g, "<em>$1</em>");
-    // Numbered list lines: "1. text"
-    text = text.replace(/^(\d+\.\s)/gm, "<span style=\"font-weight:600;color:#0a84ff\">$1</span>");
-    // Headings: lines starting with ## or #
-    text = text.replace(/^#{1,2}\s(.+)$/gm, "<div style=\"font-size:15px;font-weight:700;color:#0f1117;margin:16px 0 6px;text-align:center\">$1</div>");
-    // Paragraphs: double newline
-    text = text.replace(/\n\n/g, "</p><p style=\"margin:0 0 12px;text-align:justify\">");
+    text = text.replace(/^(\d+\.\s)/gm, "<span style='font-weight:600;color:#1d4ed8'>$1</span>");
+    text = text.replace(/^#{1,2}\s(.+)$/gm, "<div style='font-size:15px;font-weight:700;color:#0f1117;margin:16px 0 6px;text-align:center'>$1</div>");
+    text = text.replace(/^\*\*(.+)\*\*$/gm, "<div style='font-size:15px;font-weight:700;color:#0f1117;margin:16px 0 6px;text-align:center'>$1</div>");
+    text = text.replace(/\n\n/g, "</p><p style='margin:0 0 12px;text-align:justify'>");
     text = text.replace(/\n/g, "<br/>");
     return `<p style="margin:0 0 12px;text-align:justify">${text}</p>`;
   }
-
-
   const handleFileUpload = async (file) => {
     if (!file || limitReached) return;
     const reader = new FileReader();
