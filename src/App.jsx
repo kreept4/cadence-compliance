@@ -507,8 +507,7 @@ export default function App() {
       lineHeight: 1.2,
       marginBottom: 16,
       fontFamily: "'DM Serif Display', Georgia, serif",
-      textAlign: "left",
-    },
+      textAlign: "center" },
     sectionDesc: {
       fontSize: 17,
       color: "#6b7280",
@@ -1399,3 +1398,6 @@ export default function App() {
     </div>
   );
 }
+
+
+
