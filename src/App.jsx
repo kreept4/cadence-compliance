@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import cadenceLogo from "./cadence-logo.png";
+import cadenceLogo from "./cadence-logo.webp";
 
 // Drop your logo file into src/ and update this import path
-// e.g. import cadenceLogo from "./cadence-logo.png";
+// e.g. import cadenceLogo from "./cadence-logo.webp";
 // Then replace LOGO_SVG and LOGO_WHITE_SVG usages with:
 // <img src={cadenceLogo} alt="Cadence Compliance" style={{ height: 32, width: "auto" }} />
 // For now the SVG placeholder is used below — swap it out once you add your file.
