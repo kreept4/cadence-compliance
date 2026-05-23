@@ -508,11 +508,11 @@ export default function App() {
       marginBottom: 16,
       fontFamily: "'DM Serif Display', Georgia, serif",
       textAlign: "center" },
-    sectionDesc: {
+    sectionDesc: { textAlign: "center",
       fontSize: 17,
       color: "#6b7280",
       lineHeight: 1.75,
-      textAlign: "justify",
+      textAlign: "center",
     },
     servicesGrid: {
       display: "grid",
