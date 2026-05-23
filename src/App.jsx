@@ -504,7 +504,7 @@ export default function App() {
       fontWeight: 800,
       letterSpacing: "-0.8px",
       color: "#0f1117",
-      lineHeight: 1.2,
+      lineHeight: 1.2, textAlign: "center",
       marginBottom: 16,
       fontFamily: "'DM Serif Display', Georgia, serif",
       textAlign: "center" },
