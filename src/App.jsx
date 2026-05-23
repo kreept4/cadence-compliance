@@ -49,10 +49,10 @@ function LeadCard({ lead, index }) {
             {lead.company}
           </h3>
           <p style={{ margin: "2px 0 0", fontSize: "13px", color: "#94a3b8" }}>
-            {lead.contactName} · {lead.contactTitle}
+            {lead.contactName} Â· {lead.contactTitle}
           </p>
           <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#64748b" }}>
-            {lead.location} · {lead.industry}
+            {lead.location} Â· {lead.industry}
           </p>
         </div>
         <div style={{ textAlign: "right" }}>
@@ -70,7 +70,7 @@ function LeadCard({ lead, index }) {
               color: scoreColor,
             }}
           >
-            ★ {lead.fitScore}/10
+            â˜… {lead.fitScore}/10
           </div>
           <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#7c3aed", fontWeight: 600 }}>
             {lead.regulation}
@@ -90,7 +90,7 @@ function LeadCard({ lead, index }) {
             rel="noreferrer"
             style={{ fontSize: "12px", color: "#6366f1", textDecoration: "none", border: "1px solid #6366f144", borderRadius: "6px", padding: "3px 10px" }}
           >
-            🌐 Website
+            ðŸŒ Website
           </a>
         )}
         {lead.linkedin && (
@@ -100,7 +100,7 @@ function LeadCard({ lead, index }) {
             rel="noreferrer"
             style={{ fontSize: "12px", color: "#0ea5e9", textDecoration: "none", border: "1px solid #0ea5e944", borderRadius: "6px", padding: "3px 10px" }}
           >
-            💼 LinkedIn
+            ðŸ’¼ LinkedIn
           </a>
         )}
         {lead.email && (
@@ -108,14 +108,14 @@ function LeadCard({ lead, index }) {
             href={`mailto:${lead.email}`}
             style={{ fontSize: "12px", color: "#10b981", textDecoration: "none", border: "1px solid #10b98144", borderRadius: "6px", padding: "3px 10px" }}
           >
-            ✉ {lead.email}
+            âœ‰ {lead.email}
           </a>
         )}
         <button
           onClick={() => setExpanded(!expanded)}
           style={{ fontSize: "12px", color: "#94a3b8", background: "none", border: "1px solid #2d2d4e", borderRadius: "6px", padding: "3px 10px", cursor: "pointer" }}
         >
-          {expanded ? "▲ Less" : "▼ More"}
+          {expanded ? "â–² Less" : "â–¼ More"}
         </button>
       </div>
 
@@ -223,7 +223,7 @@ export default function App() {
               whiteSpace: "nowrap",
             }}
           >
-            {loading ? "Searching…" : "Find Leads"}
+            {loading ? "Searchingâ€¦" : "Find Leads"}
           </button>
         </div>
 
@@ -241,7 +241,7 @@ export default function App() {
             marginBottom: drawerOpen ? "12px" : "0",
           }}
         >
-          {drawerOpen ? "▲ Hide filters" : "▼ Filters"}
+          {drawerOpen ? "â–² Hide filters" : "â–¼ Filters"}
         </button>
 
         {drawerOpen && (
@@ -299,15 +299,15 @@ export default function App() {
         {/* Error */}
         {error && (
           <div style={{ background: "#7f1d1d22", border: "1px solid #7f1d1d", borderRadius: "8px", padding: "12px 16px", color: "#fca5a5", fontSize: "13px", marginBottom: "16px" }}>
-            ⚠ {error}
+            âš  {error}
           </div>
         )}
 
         {/* Loading */}
         {loading && (
           <div style={{ textAlign: "center", padding: "40px", color: "#64748b", fontSize: "14px" }}>
-            <div style={{ fontSize: "24px", marginBottom: "8px" }}>🔍</div>
-            Researching leads…
+            <div style={{ fontSize: "24px", marginBottom: "8px" }}>ðŸ”</div>
+            Researching leadsâ€¦
           </div>
         )}
 
@@ -326,7 +326,7 @@ export default function App() {
         {/* Empty */}
         {!loading && leads.length === 0 && !error && (
           <div style={{ textAlign: "center", padding: "60px 20px", color: "#475569" }}>
-            <div style={{ fontSize: "36px", marginBottom: "12px" }}>🎯</div>
+            <div style={{ fontSize: "36px", marginBottom: "12px" }}>ðŸŽ¯</div>
             <p style={{ margin: 0, fontSize: "14px" }}>Search for leads above to get started</p>
           </div>
         )}
